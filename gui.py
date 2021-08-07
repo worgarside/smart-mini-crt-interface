@@ -108,6 +108,10 @@ class ChromecastMediaListener(MediaStatusListener):
             status (MediaStatus): the new status of the Chromecast's media
         """
 
+        if status.player_state == self._previous_state:
+            LOGGER.debug("No change in state, returning...")
+            return
+
         payload = {
             "artwork_url": sorted(
                 status.images, key=lambda img: img.height, reverse=True
