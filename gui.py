@@ -49,8 +49,21 @@ LOGGER.debug("Config file is `%s`", CONFIG_FILE)
 
 CRT = CrtTv()
 
-SHAPES = Nanoleaf(getenv("NANOLEAF_SHAPES_IP"), getenv("NANOLEAF_SHAPES_AUTH_TOKEN"))
-HIFI_AMP = SmartPlug(getenv("HIFI_AMP_KASA_IP"))
+try:
+    SHAPES = Nanoleaf(
+        getenv("NANOLEAF_SHAPES_IP"), getenv("NANOLEAF_SHAPES_AUTH_TOKEN")
+    )
+except Exception as exc:
+    LOGGER.exception("%s - %s", type(exc).__name__, str(exc))
+    sleep(300)
+    exit()
+
+try:
+    HIFI_AMP = SmartPlug(getenv("HIFI_AMP_KASA_IP"))
+except Exception as exc:
+    LOGGER.exception("%s - %s", type(exc).__name__, str(exc))
+    sleep(300)
+    exit()
 
 
 # pylint: disable=too-few-public-methods
@@ -149,7 +162,7 @@ class ChromecastMediaListener(MediaStatusListener):
                 "MediaStatus.player_state is `%s`. Switching off", status.player_state
             )
             switch_crt_off(
-                self._previous_state
+                force_switch_off=self._previous_state
                 in {
                     MEDIA_PLAYER_STATE_PLAYING,
                     MEDIA_PLAYER_STATE_PAUSED,
