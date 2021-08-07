@@ -42,7 +42,7 @@ for _dir in [join(str(Path.home()), "logs"), LOG_DIR]:
 
 CONFIG_FILE = join(abspath(dirname(__file__)), "config.json")
 
-_DEFAULT_CONFIG = {"crt": {"state": None}, "nanoleafControl": {"state": None}}
+_DEFAULT_CONFIG = {"crt": {"state": True}, "nanoleafControl": {"state": True}}
 
 if not exists(CONFIG_FILE):
     with open(CONFIG_FILE, "w") as _fout:
