@@ -22,6 +22,7 @@ from pychromecast.controllers.media import (
 )
 from pychromecast.controllers.receiver import CastStatusListener
 from time import sleep
+from traceback import format_exc
 
 from const import (
     CONFIG_FILE,
@@ -54,7 +55,8 @@ try:
         getenv("NANOLEAF_SHAPES_IP"), getenv("NANOLEAF_SHAPES_AUTH_TOKEN")
     )
 except Exception as exc:
-    LOGGER.exception("%s - %s", type(exc).__name__, str(exc))
+    LOGGER.error("%s - %s", type(exc).__name__, str(exc))
+    LOGGER.exception(format_exc().replace("\n", "\t"))
     sleep(300)
     exit()
 
@@ -62,6 +64,7 @@ try:
     HIFI_AMP = SmartPlug(getenv("HIFI_AMP_KASA_IP"))
 except Exception as exc:
     LOGGER.exception("%s - %s", type(exc).__name__, str(exc))
+    LOGGER.exception(format_exc().replace("\n", "\t"))
     sleep(300)
     exit()
 
@@ -240,6 +243,7 @@ def run_interface():
                 type(exc).__name__,
                 exc.__str__(),
             )
+            LOGGER.exception(format_exc().replace("\n", "\t"))
 
             chromecast = None
             sleep(10)
