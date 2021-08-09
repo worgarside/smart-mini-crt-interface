@@ -11,7 +11,7 @@ from PIL import Image
 from dotenv import load_dotenv
 from kasa import SmartPlug
 from nanoleafapi import Nanoleaf
-from pychromecast import get_listed_chromecasts
+from pychromecast import get_listed_chromecasts, UnsupportedNamespace
 from pychromecast.controllers.media import (
     MediaStatusListener,
     MEDIA_PLAYER_STATE_PLAYING,
@@ -234,7 +234,12 @@ def run_interface():
 
             LOGGER.info("Chromecast connected and status listener registered")
 
-            chromecast.media_controller.update_status()
+            try:
+                LOGGER.debug("Running force update")
+                chromecast.media_controller.update_status()
+            except UnsupportedNamespace as exc:
+                LOGGER.error("%s - %s", type(exc).__name__, str(exc))
+                LOGGER.exception(format_exc().replace("\n", "\t"))
 
             LOGGER.info("Status updated, starting TK mainloop")
         except Exception as exc:  # pylint: disable=broad-except
