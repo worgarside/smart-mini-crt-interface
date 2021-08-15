@@ -6,10 +6,11 @@ from asyncio import run
 from logging import getLogger, DEBUG
 from os import getenv
 from re import sub
+from traceback import format_exc
 
 from PIL import Image
 from dotenv import load_dotenv
-from kasa import SmartPlug
+from kasa import SmartPlug, Discover
 from nanoleafapi import Nanoleaf
 from pychromecast import get_listed_chromecasts, UnsupportedNamespace
 from pychromecast.controllers.media import (
@@ -22,7 +23,6 @@ from pychromecast.controllers.media import (
 )
 from pychromecast.controllers.receiver import CastStatusListener
 from time import sleep
-from traceback import format_exc
 
 from const import (
     CONFIG_FILE,
@@ -61,7 +61,16 @@ except Exception as exc:
     exit()
 
 try:
-    HIFI_AMP = SmartPlug(getenv("HIFI_AMP_KASA_IP"))
+    devices = run(Discover.discover())
+
+    for ip, device in devices.items():
+        if device.alias.lower() == "hifi amp":
+            LOGGER.info("Found HiFi Amp on IP `%s`", ip)
+            HIFI_AMP = SmartPlug(ip)
+            break
+    else:
+        raise Exception("Unable to find HiFi Amp SmartPlug")
+
 except Exception as exc:
     LOGGER.exception("%s - %s", type(exc).__name__, str(exc))
     LOGGER.exception(format_exc().replace("\n", "\t"))
