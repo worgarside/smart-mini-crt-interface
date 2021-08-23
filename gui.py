@@ -50,32 +50,18 @@ LOGGER.debug("Config file is `%s`", CONFIG_FILE)
 
 CRT = CrtTv()
 
-try:
-    SHAPES = Nanoleaf(
-        getenv("NANOLEAF_SHAPES_IP"), getenv("NANOLEAF_SHAPES_AUTH_TOKEN")
-    )
-except Exception as exc:
-    LOGGER.error("%s - %s", type(exc).__name__, str(exc))
-    LOGGER.exception(format_exc().replace("\n", "\t"))
-    sleep(300)
-    exit()
+SHAPES = Nanoleaf(getenv("NANOLEAF_SHAPES_IP"), getenv("NANOLEAF_SHAPES_AUTH_TOKEN"))
 
-try:
-    devices = run(Discover.discover())
-
-    for ip, device in devices.items():
-        if device.alias.lower() == "hifi amp":
-            LOGGER.info("Found HiFi Amp on IP `%s`", ip)
-            HIFI_AMP = SmartPlug(ip)
-            break
+for ip, device in run(Discover.discover()).items():
+    if device.alias.lower() == "hifi amp":
+        LOGGER.info("Found HiFi Amp on IP `%s`", ip)
+        HIFI_AMP = SmartPlug(ip)
+        break
     else:
-        raise Exception("Unable to find HiFi Amp SmartPlug")
-
-except Exception as exc:
-    LOGGER.exception("%s - %s", type(exc).__name__, str(exc))
-    LOGGER.exception(format_exc().replace("\n", "\t"))
-    sleep(300)
-    exit()
+        LOGGER.debug("Found `%s`, continuing search...", device.alias.lower())
+else:
+    run(Discover.discover())
+    raise Exception("Unable to find HiFi Amp SmartPlug")
 
 
 # pylint: disable=too-few-public-methods
