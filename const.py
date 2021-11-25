@@ -26,7 +26,7 @@ TODAY_STR = datetime.today().strftime("%Y-%m-%d")
 
 CRT_PIN = int(getenv("CRT_PIN", "-1"))
 
-CAST_NAME = "Hi-fi System"
+CAST_NAME = "HiFi System"
 
 PI = rasp_pi()
 if PI:
