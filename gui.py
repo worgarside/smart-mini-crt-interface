@@ -132,7 +132,7 @@ class ChromecastMediaListener(MediaStatusListener):
             )
             switch_crt_on(self._previous_state == MEDIA_PLAYER_STATE_UNKNOWN)
 
-            run(HIFI_AMP.turn_on())
+            # run(HIFI_AMP.turn_on())
 
             if payload != self._previous_payload:
                 self._previous_payload = payload
