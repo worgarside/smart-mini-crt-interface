@@ -57,8 +57,8 @@ for ip, device in run(Discover.discover()).items():
         LOGGER.info("Found HiFi Amp on IP `%s`", ip)
         HIFI_AMP = SmartPlug(ip)
         break
-    else:
-        LOGGER.debug("Found `%s`, continuing search...", device.alias.lower())
+
+    LOGGER.debug("Found `%s`, continuing search...", device.alias.lower())
 else:
     run(Discover.discover())
     raise Exception("Unable to find HiFi Amp SmartPlug")
@@ -96,7 +96,7 @@ class ChromecastMediaListener(MediaStatusListener):
         self.cast = cast
         self.name = cast.name
 
-        self._previous_payload = dict()
+        self._previous_payload = {}
         self._previous_state = MEDIA_PLAYER_STATE_UNKNOWN
 
     def new_media_status(self, status):
@@ -210,14 +210,21 @@ def get_n_colors_from_image(img_path, n=15):
 def run_interface():
     """Setup function for creating necessary resources and listeners"""
 
-    chromecast = None
     LOGGER.info("Connecting to Chromecast...")
+    browser = None
 
-    while chromecast is None:
+    for _ in range(10):
         try:
             _chromecasts, browser = get_listed_chromecasts(
                 friendly_names=[CAST_NAME],
             )
+
+            if not _chromecasts:
+                LOGGER.debug("No Chromecast devices found")
+                if browser is not None:
+                    browser.stop_discovery()
+                sleep(5)
+                continue
 
             chromecast = _chromecasts.pop()
             # Start socket client's worker thread and wait for initial status update
@@ -245,8 +252,16 @@ def run_interface():
             )
             LOGGER.exception(format_exc().replace("\n", "\t"))
 
-            chromecast = None
+            if browser is not None:
+                browser.stop_discovery()
+
             sleep(10)
+            continue
+        break
+    else:
+        if browser is not None:
+            browser.stop_discovery()
+        raise Exception("Unable to connect to Chromecast within 10 attempts")
 
     CRT.root.mainloop()
 
