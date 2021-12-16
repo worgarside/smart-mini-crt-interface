@@ -1,18 +1,22 @@
 """
 Module for holding the main controller function(s) for controlling the GUI
 """
-
-from asyncio import run
+# pylint: disable=global-statement
 from logging import getLogger, DEBUG
 from os import getenv
 from re import sub
-from traceback import format_exc
 
 from PIL import Image
 from dotenv import load_dotenv
 from kasa import SmartPlug, Discover
 from nanoleafapi import Nanoleaf
-from pychromecast import get_listed_chromecasts, UnsupportedNamespace
+from pychromecast import (
+    CastBrowser,
+    Chromecast,
+    CastInfo,
+    SimpleCastListener,
+    UnsupportedNamespace,
+)
 from pychromecast.controllers.media import (
     MediaStatusListener,
     MEDIA_PLAYER_STATE_PLAYING,
@@ -21,14 +25,14 @@ from pychromecast.controllers.media import (
     MEDIA_PLAYER_STATE_IDLE,
     MEDIA_PLAYER_STATE_UNKNOWN,
 )
-from pychromecast.controllers.receiver import CastStatusListener
 from time import sleep
+
+from zeroconf import Zeroconf
 
 from const import (
     CONFIG_FILE,
     FH,
     SH,
-    CAST_NAME,
     switch_crt_on,
     switch_crt_off,
     get_config,
@@ -52,36 +56,29 @@ CRT = CrtTv()
 
 SHAPES = Nanoleaf(getenv("NANOLEAF_SHAPES_IP"), getenv("NANOLEAF_SHAPES_AUTH_TOKEN"))
 
-for ip, device in run(Discover.discover()).items():
-    if device.alias.lower() == "hifi amp":
-        LOGGER.info("Found HiFi Amp on IP `%s`", ip)
-        HIFI_AMP = SmartPlug(ip)
-        break
+TARGET_CHROMECAST_NAME = getenv("TARGET_CHROMECAST_NAME")
 
-    LOGGER.debug("Found `%s`, continuing search...", device.alias.lower())
+BROWSER: CastBrowser = None  # noqa
+CHROMECAST: Chromecast = None  # noqa
+
+ZCONF = Zeroconf()
+
+
+if int(getenv("CONTROL_HIFI_AMP", "0")) == 1:
+    from asyncio import run
+
+    for ip, device in run(Discover.discover()).items():
+        if device.alias.lower() == "hifi amp":
+            LOGGER.info("Found HiFi Amp on IP `%s`", ip)
+            HIFI_AMP = SmartPlug(ip)
+            break
+
+        LOGGER.debug("Found `%s`, continuing search...", device.alias.lower())
+    else:
+        run(Discover.discover())
+        raise Exception("Unable to find HiFi Amp SmartPlug")
 else:
-    run(Discover.discover())
-    raise Exception("Unable to find HiFi Amp SmartPlug")
-
-
-# pylint: disable=too-few-public-methods
-class ChromecastStatusListener(CastStatusListener):
-    """Class for listening to the Chromecast status. Currently unused.
-
-    Args:
-        cast (Chromecast): the Chromecast being monitored
-    """
-
-    def __init__(self, cast):
-        self.cast = cast
-        self.name = cast.name
-
-    def new_cast_status(self, status):
-        """Method executed when the status of the Chromecast changes
-
-        Args:
-            status (ChromecastStatus): the new status of the Chromecast
-        """
+    HIFI_AMP = None
 
 
 # pylint: disable=too-few-public-methods
@@ -132,7 +129,8 @@ class ChromecastMediaListener(MediaStatusListener):
             )
             switch_crt_on(self._previous_state == MEDIA_PLAYER_STATE_UNKNOWN)
 
-            # run(HIFI_AMP.turn_on())
+            if HIFI_AMP:
+                run(HIFI_AMP.turn_on())
 
             if payload != self._previous_payload:
                 self._previous_payload = payload
@@ -207,70 +205,90 @@ def get_n_colors_from_image(img_path, n=15):
     ][:n]
 
 
-def run_interface():
-    """Setup function for creating necessary resources and listeners"""
+def add_callback(uuid, _):
+    """Callback function for when a Chromecast is discovered
 
-    LOGGER.info("Connecting to Chromecast...")
-    browser = None
+    Args:
+        uuid (UUID): the CC's UUID
 
-    for _ in range(10):
-        try:
-            _chromecasts, browser = get_listed_chromecasts(
-                friendly_names=[CAST_NAME],
-            )
+    """
+    global CHROMECAST
 
-            if not _chromecasts:
-                LOGGER.debug("No Chromecast devices found")
-                if browser is not None:
-                    browser.stop_discovery()
-                sleep(5)
-                continue
+    if CHROMECAST:
+        return
 
-            chromecast = _chromecasts.pop()
-            # Start socket client's worker thread and wait for initial status update
-            chromecast.wait()
+    cast_info: CastInfo = BROWSER.services.get(uuid)
 
-            chromecast.media_controller.register_status_listener(
-                ChromecastMediaListener(chromecast)
-            )
+    if not cast_info:
+        print(f"No service found with UUID {uuid} in browser")
+        return
 
-            LOGGER.info("Chromecast connected and status listener registered")
+    print(f"Found {cast_info.friendly_name} with UUID {uuid}")
 
-            try:
-                LOGGER.debug("Running force update")
-                chromecast.media_controller.update_status()
-            except UnsupportedNamespace as exc:
-                LOGGER.error("%s - %s", type(exc).__name__, str(exc))
-                LOGGER.exception(format_exc().replace("\n", "\t"))
+    if (
+        cast_info.friendly_name.lower().strip()
+        == TARGET_CHROMECAST_NAME.lower().strip()
+    ):
+        CHROMECAST = Chromecast(
+            cast_info=cast_info,
+            zconf=ZCONF,
+        )
 
-            LOGGER.info("Status updated, starting TK mainloop")
-        except Exception as exc:  # pylint: disable=broad-except
-            LOGGER.error(
-                "Error connecting to Chromecast: `%s - %s`",
-                type(exc).__name__,
-                exc.__str__(),
-            )
-            LOGGER.exception(format_exc().replace("\n", "\t"))
 
-            if browser is not None:
-                browser.stop_discovery()
+def remove_callback(uuid, _):
+    """Callback function for when a discovered Chromecast disappears
 
-            sleep(10)
-            continue
-        break
-    else:
-        if browser is not None:
-            browser.stop_discovery()
-        raise Exception("Unable to connect to Chromecast within 10 attempts")
+    Args:
+        uuid (UUID): the UUID of the removed Chromecast
+        _: _
+    """
+
+    global CHROMECAST
+
+    cast_info: CastInfo = BROWSER.services.get(uuid)
+
+    if (
+        cast_info.friendly_name.lower().strip()
+        == TARGET_CHROMECAST_NAME.lower().strip()
+    ):
+        CHROMECAST = None
+
+
+def main():
+    """Main function for this script"""
+    global BROWSER
+
+    BROWSER = CastBrowser(
+        SimpleCastListener(
+            add_callback=add_callback,
+            remove_callback=remove_callback,
+        ),
+        zeroconf_instance=ZCONF,
+    )
+    BROWSER.start_discovery()
+
+    while not CHROMECAST:
+        print(
+            f"Found {BROWSER.count} devices so far: `{'`, `'.join(cast_info.friendly_name for cast_info in BROWSER.services.values())}`"
+        )
+        sleep(1)
+
+    CHROMECAST.wait()
+    CHROMECAST.media_controller.register_status_listener(
+        ChromecastMediaListener(CHROMECAST)
+    )
+
+    try:
+        LOGGER.debug("Running force update")
+        CHROMECAST.media_controller.update_status()
+    except UnsupportedNamespace as exc:
+        LOGGER.error("%s - %s", type(exc).__name__, str(exc))
 
     CRT.root.mainloop()
 
-    LOGGER.info("TK mainloop exited, stopping Chromecast discovery")
-
-    browser.stop_discovery()
-
-    LOGGER.info("Exiting")
+    # Shut down discovery
+    BROWSER.stop_discovery()
 
 
 if __name__ == "__main__":
-    run_interface()
+    main()

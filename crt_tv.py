@@ -10,14 +10,44 @@ from os import mkdir
 from os.path import exists, join
 from pathlib import Path
 from re import compile as compile_regex
-from tkinter import Label, Canvas, CENTER, Tk
-from tkinter.font import Font
 
-from PIL import Image, ImageTk
 from dotenv import load_dotenv
 from requests import get
 
 from const import FH, SH
+
+try:
+    from tkinter import Label, Canvas, CENTER, Tk
+    from tkinter.font import Font
+    from PIL import Image, ImageTk
+except ImportError:
+    from unittest.mock import MagicMock
+    from time import sleep
+
+    class TkMagicMock(MagicMock):
+        """MagicMock specifically for Tk class"""
+
+        @staticmethod
+        def mainloop(*_, **__):
+            """Substitute for TK.mainloop for non-Tk configurations"""
+            while True:
+                print("loop")
+                sleep(1)
+
+    class ImageMagicMock(MagicMock):
+        """MagicMock specifically for Image class"""
+
+        def resize(self, *_, **__):
+            """Placeholder for Image.resize"""
+
+    Label = MagicMock()
+    Canvas = MagicMock()
+    Tk = TkMagicMock()
+    Font = MagicMock()
+    Image = MagicMock()
+    ImageTk = MagicMock()
+
+    CENTER = "center"
 
 load_dotenv()
 

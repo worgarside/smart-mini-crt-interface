@@ -8,19 +8,20 @@ from logging import StreamHandler, FileHandler, Formatter, getLogger, DEBUG
 from os import mkdir, getenv
 from os.path import exists, join, abspath, dirname
 from pathlib import Path
+from unittest.mock import MagicMock
 
 from dotenv import load_dotenv
 from sys import stdout
 
 try:
     from pigpio import pi as rasp_pi, OUTPUT
-except (AttributeError, ModuleNotFoundError):
-    rasp_pi = lambda *a, **kw: None
+except (AttributeError, ImportError):
+    rasp_pi = MagicMock()
     OUTPUT = None
 
 load_dotenv()
 
-# ################### CONSTANT VALUES ################### #
+# ################### CONSTANTS ################### #
 
 TODAY_STR = datetime.today().strftime("%Y-%m-%d")
 
@@ -29,8 +30,7 @@ CRT_PIN = int(getenv("CRT_PIN", "-1"))
 CAST_NAME = "HiFi System"
 
 PI = rasp_pi()
-if PI:
-    PI.set_mode(CRT_PIN, OUTPUT)
+PI.set_mode(CRT_PIN, OUTPUT)
 
 # ################### DIRECTORIES / FILES ################### #
 
