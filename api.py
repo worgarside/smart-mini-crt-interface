@@ -21,6 +21,18 @@ app = Flask(__name__)
 app.config["DEBUG"] = True
 
 
+@app.route("/crt/state", methods=["GET"])
+def crt_state():
+    """API endpoint for getting the CRT state"""
+
+    LOGGER.info("API hit on `/crt/state`")
+
+    with open(CONFIG_FILE) as fin:
+        config = load(fin)
+
+    return config["crt"]
+
+
 @app.route("/crt/on", methods=["GET"])
 def crt_on():
     """API endpoint for turning the CRT on"""
@@ -79,6 +91,18 @@ def crt_toggle():
         switch_crt_off()
 
     return f"""<p>CRT {"On" if config["crt"]["state"] else "Off"}</p>"""
+
+
+@app.route("/nanoleaf-mirror/state", methods=["GET"])
+def nanoleaf_state():
+    """API endpoint for getting the Nanoleaf artwork mirroring state"""
+
+    LOGGER.info("API hit on `/nanoleaf-mirror/state`")
+
+    with open(CONFIG_FILE) as fin:
+        config = load(fin)
+
+    return config["nanoleafControl"]
 
 
 @app.route("/nanoleaf-mirror/on", methods=["GET"])
