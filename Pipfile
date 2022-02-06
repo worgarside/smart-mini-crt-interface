@@ -4,17 +4,20 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+black = "==21.5b1"
+pylint = "*"
 
 [packages]
 python-dotenv = "*"
+pigpio = {version = "*",sys_platform = "!= 'darwin'"}
+pychromecast = "*"
+pillow = "*"
 requests = "*"
+tk = "*"
+nanoleafapi = "*"
+pre-commit = "*"
 flask = "*"
-jinja2 = "*"
-flask-scss = "*"
+python-kasa = "==0.4.0.dev2"
 
 [requires]
-python_version = "3.7"
-
-[scripts]
-server = "pipenv run python -m flask run --host 0.0.0.0"
-open = "chromium-browser -kiosk --disable-session-crashed-bubble --disable-infobars --incognito 127.0.0.1:5000/no-content"
+python_version = "3.8"

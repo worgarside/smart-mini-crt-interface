@@ -1,0 +1,16 @@
+[Unit]
+Description=CRT Controller Service
+After=graphical.target
+Wants=graphical.target
+
+[Service]
+User=pi
+Group=pi
+Environment="DISPLAY=:0.0"
+Environment="XAUTHORITY=/home/pi/.Xauthority"
+ExecStart=/home/pi/.pyenv/shims/python /home/pi/smart-mini-crt-interface/gui.py
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=graphical.target
