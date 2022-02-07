@@ -65,7 +65,7 @@ class CrtTv:
     CHAR_LIM = 31
     MAX_WAIT_TIME_MS = 10000
     ARTWORK_DIR = join(str(Path.home()), "crt_artwork")
-    PATTERN = compile_regex(r"[^\w ]+")
+    PATTERN = compile_regex(r"[^\w =\-\(\)<>,.]+")
 
     def __init__(self):
         if not exists(self.ARTWORK_DIR):
