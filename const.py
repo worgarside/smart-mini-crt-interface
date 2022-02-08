@@ -112,7 +112,7 @@ def set_config(value, *, keys):
     """Sets a config value in the local config file
 
     Args:
-        value (bool): the value to set the config option to
+        value (Union([str, int, bool, dict)): the value to set the config option to
         keys (list): the list of keys to traverse the config dict with
     """
 

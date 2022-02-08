@@ -36,6 +36,7 @@ from const import (
     switch_crt_on,
     switch_crt_off,
     get_config,
+    set_config,
 )
 from crt_tv import CrtTv
 
@@ -140,18 +141,22 @@ class ChromecastMediaListener(MediaStatusListener):
                     LOGGER.debug(
                         "Sending colors for `%s` to Nanoleaf Shapes", status.album_name
                     )
-                    SHAPES.write_effect(
-                        {
-                            "command": "display",
-                            "animType": "random",
-                            "colorType": "HSB",
-                            "animData": None,
-                            "palette": get_n_colors_from_image(CRT.artwork_path),
-                            "transTime": {"minValue": 50, "maxValue": 100},
-                            "delayTime": {"minValue": 50, "maxValue": 100},
-                            "loop": True,
-                        }
+                    set_config(
+                        get_config(keys=["effect", "current"]),
+                        keys=["effect", "previous"],
                     )
+                    effect_dict = {
+                        "command": "display",
+                        "animType": "random",
+                        "colorType": "HSB",
+                        "animData": None,
+                        "palette": get_n_colors_from_image(CRT.artwork_path),
+                        "transTime": {"minValue": 50, "maxValue": 100},
+                        "delayTime": {"minValue": 50, "maxValue": 100},
+                        "loop": True,
+                    }
+                    set_config(effect_dict, keys=["effect", "current"])
+                    SHAPES.write_effect(effect_dict=effect_dict)
             else:
                 LOGGER.debug("No change to core payload")
 
@@ -240,7 +245,6 @@ def remove_callback(uuid, _):
 
     Args:
         uuid (UUID): the UUID of the removed Chromecast
-        _: _
     """
 
     global CHROMECAST
@@ -269,7 +273,11 @@ def main():
 
     while not CHROMECAST:
         print(
-            f"Found {BROWSER.count} devices so far: `{'`, `'.join(cast_info.friendly_name for cast_info in BROWSER.services.values())}`"
+            f"Found {BROWSER.count} devices so far: `"
+            + "`, `".join(
+                cast_info.friendly_name for cast_info in BROWSER.services.values()
+            )
+            + "`"
         )
         sleep(1)
 

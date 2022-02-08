@@ -124,5 +124,41 @@ def nanoleaf_toggle():
     return "<p>Nanoleaf Control " + "On" if new_state else "Off" + "</p>"
 
 
+@app.route("/effect", methods=["GET"])
+def effect():
+    """API endpoint for getting the current and previous effect dicts"""
+
+    LOGGER.info("API hit on `/effect`")
+
+    return get_config(keys=["effect"])
+
+
+@app.route("/effect/current", methods=["GET"])
+def effect_current():
+    """API endpoint for getting the current effect dict"""
+
+    LOGGER.info("API hit on `/effect/current`")
+
+    return get_config(keys=["effect", "current"])
+
+
+@app.route("/effect/previous", methods=["GET"])
+def effect_previous():
+    """API endpoint for getting the previous effect dict"""
+
+    LOGGER.info("API hit on `/effect/previous`")
+
+    return get_config(keys=["effect", "previous"])
+
+
+@app.route("/config", methods=["GET"])
+def config():
+    """API endpoint for getting the config"""
+
+    LOGGER.info("API hit on `/config`")
+
+    return get_config(keys=[])
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(getenv("CRT_API_PORT", "5000")))
