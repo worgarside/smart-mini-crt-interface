@@ -116,21 +116,23 @@ def set_config(value, *, keys):
         keys (list): the list of keys to traverse the config dict with
     """
 
-    _LOGGER.debug("Setting config to `%s` for `%s`", value, ".".join(keys))
+    _LOGGER.debug("Setting config to `%s` for `%s`", value, ".".join(map(str, keys)))
 
     with open(CONFIG_FILE) as fin:
         config = load(fin)
 
     target_key = keys.pop()
-
-    subconfig = None
+    inner_config = None
     for i, key in enumerate(keys):
         if i == 0:
-            subconfig = config.get(key, {})
+            inner_config = config.setdefault(key, {})
         else:
-            subconfig = subconfig.get(key, {})
+            inner_config = inner_config.setdefault(key, {})
 
-    (subconfig or config)[target_key] = value
+    if inner_config is not None:
+        inner_config[target_key] = value
+    else:
+        config[target_key] = value
 
     with open(CONFIG_FILE, "w") as fout:
         dump(config, fout)
