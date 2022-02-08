@@ -2,13 +2,20 @@
 This module contains the methods used in the API definition
 """
 
-from json import load, dump
 from logging import getLogger, DEBUG
-
 from os import getenv
+
 from flask import Flask
 
-from const import CONFIG_FILE, FH, SH, switch_crt_on, switch_crt_off, set_config
+from const import (
+    CONFIG_FILE,
+    FH,
+    SH,
+    switch_crt_on,
+    switch_crt_off,
+    set_config,
+    get_config,
+)
 
 LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
@@ -27,10 +34,7 @@ def crt_state():
 
     LOGGER.info("API hit on `/crt/state`")
 
-    with open(CONFIG_FILE) as fin:
-        config = load(fin)
-
-    return config["crt"]
+    return get_config(keys=["crt"])
 
 
 @app.route("/crt/on", methods=["GET"])
@@ -39,13 +43,7 @@ def crt_on():
 
     LOGGER.info("API hit on `/crt/on`")
 
-    with open(CONFIG_FILE) as fin:
-        config = load(fin)
-
-    config["crt"]["state"] = True
-
-    with open(CONFIG_FILE, "w") as fout:
-        dump(config, fout)
+    set_config(True, keys=["crt", "state"])
 
     switch_crt_on()
 
@@ -58,13 +56,7 @@ def crt_off():
 
     LOGGER.info("API hit on `/crt/off`")
 
-    with open(CONFIG_FILE) as fin:
-        config = load(fin)
-
-    config["crt"]["state"] = False
-
-    with open(CONFIG_FILE, "w") as fout:
-        dump(config, fout)
+    set_config(False, keys=["crt", "state"])
 
     switch_crt_off()
 
@@ -77,20 +69,15 @@ def crt_toggle():
 
     LOGGER.info("API hit on `/crt/toggle`")
 
-    with open(CONFIG_FILE) as fin:
-        config = load(fin)
+    new_state = not get_config(keys=["crt", "state"])
+    set_config(new_state, keys=["crt", "state"])
 
-    config["crt"]["state"] = not config["crt"]["state"]
-
-    with open(CONFIG_FILE, "w") as fout:
-        dump(config, fout)
-
-    if config["crt"]["state"]:
+    if new_state:
         switch_crt_on()
     else:
         switch_crt_off()
 
-    return f"""<p>CRT {"On" if config["crt"]["state"] else "Off"}</p>"""
+    return f"""<p>CRT {"On" if new_state else "Off"}</p>"""
 
 
 @app.route("/nanoleaf-mirror/state", methods=["GET"])
@@ -99,10 +86,7 @@ def nanoleaf_state():
 
     LOGGER.info("API hit on `/nanoleaf-mirror/state`")
 
-    with open(CONFIG_FILE) as fin:
-        config = load(fin)
-
-    return config["nanoleafControl"]
+    return get_config(keys=["nanoleafControl"])
 
 
 @app.route("/nanoleaf-mirror/on", methods=["GET"])
@@ -110,14 +94,6 @@ def nanoleaf_on():
     """API endpoint for turning Nanoleaf artwork mirroring on"""
 
     LOGGER.info("API hit on `/nanoleaf-mirror/on`")
-
-    with open(CONFIG_FILE) as fin:
-        config = load(fin)
-
-    config["nanoleafControl"]["state"] = True
-
-    with open(CONFIG_FILE, "w") as fout:
-        dump(config, fout)
 
     set_config(True, keys=["nanoleafControl", "state"])
 
@@ -130,14 +106,6 @@ def nanoleaf_off():
 
     LOGGER.info("API hit on `/nanoleaf-mirror/off`")
 
-    with open(CONFIG_FILE) as fin:
-        config = load(fin)
-
-    config["nanoleafControl"]["state"] = False
-
-    with open(CONFIG_FILE, "w") as fout:
-        dump(config, fout)
-
     set_config(False, keys=["nanoleafControl", "state"])
 
     return "<p>Nanoleaf Control Off</p>"
@@ -149,24 +117,11 @@ def nanoleaf_toggle():
 
     LOGGER.info("API hit on `/nanoleaf-mirror/toggle`")
 
-    with open(CONFIG_FILE) as fin:
-        config = load(fin)
+    new_state = not get_config(keys=["nanoleafControl", "state"])
 
-    config["nanoleafControl"]["state"] = not config["nanoleafControl"]["state"]
+    set_config(new_state, keys=["nanoleafControl", "state"])
 
-    with open(CONFIG_FILE, "w") as fout:
-        dump(config, fout)
-
-    if config["nanoleafControl"]["state"]:
-        set_config(True, keys=["nanoleafControl", "state"])
-    else:
-        set_config(False, keys=["nanoleafControl", "state"])
-
-    return (
-        "<p>Nanoleaf Control " + "On"
-        if config["nanoleafControl"]["state"]
-        else "Off" + "</p>"
-    )
+    return "<p>Nanoleaf Control " + "On" if new_state else "Off" + "</p>"
 
 
 if __name__ == "__main__":
