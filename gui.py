@@ -145,6 +145,10 @@ class ChromecastMediaListener(MediaStatusListener):
                         get_config(keys=["effect", "current"]),
                         keys=["effect", "previous"],
                     )
+                    set_config(
+                        get_config(keys=["media_payload", "current"]),
+                        keys=["media_payload", "previous"],
+                    )
                     effect_dict = {
                         "command": "display",
                         "animType": "random",
@@ -156,6 +160,7 @@ class ChromecastMediaListener(MediaStatusListener):
                         "loop": True,
                     }
                     set_config(effect_dict, keys=["effect", "current"])
+                    set_config(payload, keys=["media_payload", "current"])
                     SHAPES.write_effect(effect_dict=effect_dict)
             else:
                 LOGGER.debug("No change to core payload")

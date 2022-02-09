@@ -160,5 +160,23 @@ def config():
     return get_config(keys=[])
 
 
+@app.route("/media-payload/current", methods=["GET"])
+def media_payload_current():
+    """API endpoint for getting the current media payload dict"""
+
+    LOGGER.info("API hit on `/media-payload/current`")
+
+    return get_config(keys=["media_payload", "current"])
+
+
+@app.route("/media-payload/previous", methods=["GET"])
+def media_payload_previous():
+    """API endpoint for getting the previous media payload dict"""
+
+    LOGGER.info("API hit on `/media-payload/previous`")
+
+    return get_config(keys=["media_payload", "previous"])
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(getenv("CRT_API_PORT", "5000")), debug=True)
