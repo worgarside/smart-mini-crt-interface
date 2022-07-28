@@ -17,7 +17,7 @@ tk = "*"
 nanoleafapi = "*"
 pre-commit = "*"
 flask = "*"
-python-kasa = "==0.4.0.dev2"
+python-kasa = "==0.5.0"
 
 [requires]
 python_version = "3.8"
