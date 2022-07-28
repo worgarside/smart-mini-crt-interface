@@ -55,7 +55,7 @@ LOGGER.debug("Config file is `%s`", CONFIG_FILE)
 
 CRT = CrtTv()
 
-SHAPES = Nanoleaf(getenv("NANOLEAF_SHAPES_IP"), getenv("NANOLEAF_SHAPES_AUTH_TOKEN"))
+# SHAPES = Nanoleaf(getenv("NANOLEAF_SHAPES_IP"), getenv("NANOLEAF_SHAPES_AUTH_TOKEN"))
 
 TARGET_CHROMECAST_NAME = getenv("TARGET_CHROMECAST_NAME")
 
@@ -161,7 +161,7 @@ class ChromecastMediaListener(MediaStatusListener):
                     }
                     set_config(effect_dict, keys=["effect", "current"])
                     set_config(payload, keys=["media_payload", "current"])
-                    SHAPES.write_effect(effect_dict=effect_dict)
+                    # SHAPES.write_effect(effect_dict=effect_dict)
             else:
                 LOGGER.debug("No change to core payload")
 
