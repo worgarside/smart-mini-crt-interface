@@ -187,10 +187,10 @@
         },
         "nanoleafapi": {
             "hashes": [
-                "sha256:76a5fc5826f7377de28c713ba6a40b8684f625c231f4a936f6c1c53064570e58"
+                "sha256:d7069faad094ec63c48ff657d2b9a6fe0d9e7bd6f7af85e9fc69206ce39c29b5"
             ],
             "index": "pypi",
-            "version": "==2.1.0"
+            "version": "==2.1.1"
         },
         "nodeenv": {
             "hashes": [
