@@ -175,6 +175,8 @@ class CrtTv:
             },
         }
 
+        self.artwork_image: PhotoImage
+
         for widget_name in ("artwork", "media_title", "media_artist"):
             self.widgets[widget_name].place(  # type: ignore[literal-required]
                 **self.coords[widget_name]  # type: ignore[literal-required]
@@ -240,8 +242,8 @@ class CrtTv:
             )
 
         tk_img = tk_img.resize((self.artwork_size, self.artwork_size), Image.ANTIALIAS)
-
-        self.widgets["artwork"].configure(image=PhotoImage(tk_img))
+        self.artwork_image = PhotoImage(tk_img)
+        self.widgets["artwork"].configure(image=self.artwork_image)
 
         # `k` can have other values, but only these two are relevant
         k: Literal["media_title", "media_artist"]
