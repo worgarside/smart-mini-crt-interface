@@ -163,6 +163,11 @@ class ChromecastMediaListener(MediaStatusListener, ABC):  # type: ignore[misc]
 
         self._previous_state = status.player_state
 
+    def load_media_failed(self, item: int, error_code: int) -> None:
+        """Placeholder to satisfy the reqs of an abstract class, doesn't actually
+        do anything
+        """
+
 
 @on_exception()  # type: ignore[misc]
 def add_callback(uuid: UUID, _: str) -> None:

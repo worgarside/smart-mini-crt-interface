@@ -192,6 +192,10 @@ class CrtTv:
              in the payload
         """
 
+        if all(bool(v) is False for v in payload.values()):
+            LOGGER.warning("Empty payload provided, not updating display")
+            return
+
         LOGGER.info("Updating display with payload:\t%s", dumps(payload))
 
         if not exists(

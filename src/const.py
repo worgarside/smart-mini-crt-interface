@@ -4,7 +4,7 @@ Module for holding all constants and functions to be used across the entire proj
 from datetime import datetime
 from json import dump, load
 from logging import DEBUG, getLogger
-from os import getenv, mkdir
+from os import mkdir
 from os.path import abspath, dirname, exists, join
 from pathlib import Path
 from typing import TypedDict
@@ -34,7 +34,7 @@ class ConfigInfo(TypedDict):
 
 TODAY_STR = datetime.today().strftime("%Y-%m-%d")
 
-CRT_PIN = int(getenv("CRT_PIN", "-1"))
+CRT_PIN = 26
 
 CAST_NAME = "HiFi System"
 
