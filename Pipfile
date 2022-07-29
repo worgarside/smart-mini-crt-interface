@@ -6,6 +6,7 @@ verify_ssl = true
 [dev-packages]
 black = "==22.6.0"
 pylint = "*"
+pre-commit = "*"
 
 [packages]
 python-dotenv = "*"
@@ -14,10 +15,9 @@ pychromecast = "*"
 pillow = "*"
 requests = "*"
 tk = "*"
-nanoleafapi = "*"
-pre-commit = "*"
 flask = "*"
 python-kasa = "==0.5.0"
+wg-utilities = "*"
 
 [requires]
 python_version = "3.8"

@@ -2,50 +2,42 @@
 Module for holding the main controller function(s) for controlling the GUI
 """
 # pylint: disable=global-statement
-from logging import getLogger, DEBUG
-from os import getenv
+from abc import ABC
+from logging import DEBUG, getLogger
+from os import environ, getenv
 from re import sub
-
-from PIL import Image
-from dotenv import load_dotenv
-from kasa import SmartPlug, Discover
-from nanoleafapi import Nanoleaf
-from pychromecast import (
-    CastBrowser,
-    Chromecast,
-    CastInfo,
-    SimpleCastListener,
-    UnsupportedNamespace,
-)
-from pychromecast.controllers.media import (
-    MediaStatusListener,
-    MEDIA_PLAYER_STATE_PLAYING,
-    MEDIA_PLAYER_STATE_BUFFERING,
-    MEDIA_PLAYER_STATE_PAUSED,
-    MEDIA_PLAYER_STATE_IDLE,
-    MEDIA_PLAYER_STATE_UNKNOWN,
-)
 from time import sleep
+from typing import List
+from uuid import UUID
 
+from dotenv import load_dotenv
+from kasa import Discover, SmartPlug
+from pychromecast import Chromecast
+from pychromecast.controllers.media import (
+    MEDIA_PLAYER_STATE_BUFFERING,
+    MEDIA_PLAYER_STATE_IDLE,
+    MEDIA_PLAYER_STATE_PAUSED,
+    MEDIA_PLAYER_STATE_PLAYING,
+    MEDIA_PLAYER_STATE_UNKNOWN,
+    MediaImage,
+    MediaStatus,
+    MediaStatusListener,
+)
+from pychromecast.discovery import CastBrowser, SimpleCastListener
+from pychromecast.error import UnsupportedNamespace
+from pychromecast.models import CastInfo
+from wg_utilities.loggers import add_file_handler, add_stream_handler
 from zeroconf import Zeroconf
 
-from const import (
-    CONFIG_FILE,
-    FH,
-    SH,
-    switch_crt_on,
-    switch_crt_off,
-    get_config,
-    set_config,
-)
-from crt_tv import CrtTv
+from const import CONFIG_FILE, LOG_DIR, TODAY_STR, switch_crt_off, switch_crt_on
+from crt_tv import CrtTv, DisplayPayloadInfo
 
 load_dotenv()
 
 LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
-LOGGER.addHandler(FH)
-LOGGER.addHandler(SH)
+add_stream_handler(LOGGER)
+add_file_handler(LOGGER, logfile_path=f"{LOG_DIR}/gui/{TODAY_STR}.log")
 
 LOGGER.debug("Config file is `%s`", CONFIG_FILE)
 
@@ -55,9 +47,7 @@ LOGGER.debug("Config file is `%s`", CONFIG_FILE)
 
 CRT = CrtTv()
 
-# SHAPES = Nanoleaf(getenv("NANOLEAF_SHAPES_IP"), getenv("NANOLEAF_SHAPES_AUTH_TOKEN"))
-
-TARGET_CHROMECAST_NAME = getenv("TARGET_CHROMECAST_NAME")
+TARGET_CHROMECAST_NAME = environ["TARGET_CHROMECAST_NAME"]
 
 BROWSER: CastBrowser = None  # noqa
 CHROMECAST: Chromecast = None  # noqa
@@ -82,22 +72,26 @@ else:
     HIFI_AMP = None
 
 
-# pylint: disable=too-few-public-methods
-class ChromecastMediaListener(MediaStatusListener):
+class ChromecastMediaListener(MediaStatusListener, ABC):  # type: ignore[misc]
     """Class for listening to the Chromecast media status
 
     Args:
         cast (Chromecast): the Chromecast being monitored
     """
 
-    def __init__(self, cast):
+    def __init__(self, cast: Chromecast) -> None:
         self.cast = cast
         self.name = cast.name
 
-        self._previous_payload = {}
+        self._previous_payload: DisplayPayloadInfo = {
+            "artwork_url": None,
+            "media_artist": "",
+            "media_title": "",
+            "album_name": "",
+        }
         self._previous_state = MEDIA_PLAYER_STATE_UNKNOWN
 
-    def new_media_status(self, status):
+    def new_media_status(self, status: MediaStatus) -> None:
         """Method executed when the status of the Chromecast changes
 
         Args:
@@ -108,11 +102,15 @@ class ChromecastMediaListener(MediaStatusListener):
             LOGGER.debug("No change in state, returning...")
             return
 
-        payload = {
-            "artwork_url": sorted(
-                status.images, key=lambda img: img.height, reverse=True
-            )[0].url
-            if status.images
+        available_artwork_images: List[MediaImage] = sorted(
+            status.images,
+            key=lambda img: img.height,  # type: ignore[no-any-return]
+            reverse=True,
+        )
+
+        payload: DisplayPayloadInfo = {
+            "artwork_url": available_artwork_images[0].url
+            if len(available_artwork_images) > 0
             else None,
             "media_title": sub(r".mp3$", "", status.title or ""),
             "media_artist": status.artist or "",
@@ -136,32 +134,6 @@ class ChromecastMediaListener(MediaStatusListener):
             if payload != self._previous_payload:
                 self._previous_payload = payload
                 CRT.update_display(payload)
-
-                if get_config(keys=["nanoleafControl", "state"]):
-                    LOGGER.debug(
-                        "Sending colors for `%s` to Nanoleaf Shapes", status.album_name
-                    )
-                    set_config(
-                        get_config(keys=["effect", "current"]),
-                        keys=["effect", "previous"],
-                    )
-                    set_config(
-                        get_config(keys=["media_payload", "current"]),
-                        keys=["media_payload", "previous"],
-                    )
-                    effect_dict = {
-                        "command": "display",
-                        "animType": "random",
-                        "colorType": "HSB",
-                        "animData": None,
-                        "palette": get_n_colors_from_image(CRT.artwork_path),
-                        "transTime": {"minValue": 50, "maxValue": 100},
-                        "delayTime": {"minValue": 50, "maxValue": 100},
-                        "loop": True,
-                    }
-                    set_config(effect_dict, keys=["effect", "current"])
-                    set_config(payload, keys=["media_payload", "current"])
-                    # SHAPES.write_effect(effect_dict=effect_dict)
             else:
                 LOGGER.debug("No change to core payload")
 
@@ -189,37 +161,12 @@ class ChromecastMediaListener(MediaStatusListener):
         self._previous_state = status.player_state
 
 
-def get_n_colors_from_image(img_path, n=15):
-    """Get the N most common colors from an image
-
-    Args:
-        img_path (str): the path to the image file
-        n (int): the number of colors to retrieve from the image
-
-    Returns:
-        list: a list of the N most common colors in an image in the HSB format
-    """
-    pixels = Image.open(img_path).quantize(colors=n, method=0)
-
-    return [
-        {
-            "hue": int((color_tuple[0] * 360) / 255),
-            "saturation": int((color_tuple[1] * 100) / 255),
-            "brightness": int((color_tuple[2] * 100) / 255),
-        }
-        for count, color_tuple in sorted(
-            pixels.convert(mode="HSV").getcolors(),
-            key=lambda elem: elem[0],
-            reverse=True,
-        )
-    ][:n]
-
-
-def add_callback(uuid, _):
+def add_callback(uuid: UUID, _: str) -> None:
     """Callback function for when a Chromecast is discovered
 
     Args:
         uuid (UUID): the CC's UUID
+        _ (str) the name of the service
 
     """
     global CHROMECAST
@@ -245,11 +192,12 @@ def add_callback(uuid, _):
         )
 
 
-def remove_callback(uuid, _):
+def remove_callback(uuid: UUID, _: str) -> None:
     """Callback function for when a discovered Chromecast disappears
 
     Args:
         uuid (UUID): the UUID of the removed Chromecast
+        _ (str) the name of the service
     """
 
     global CHROMECAST
@@ -263,7 +211,7 @@ def remove_callback(uuid, _):
         CHROMECAST = None
 
 
-def main():
+def main() -> None:
     """Main function for this script"""
     global BROWSER
 

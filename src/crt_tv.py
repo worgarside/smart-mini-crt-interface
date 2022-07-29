@@ -1,34 +1,40 @@
 """
 This module contains the class for controlling the CRT TV GUI
 """
+from __future__ import annotations
 
 from html import unescape
 from io import BytesIO
 from json import dumps
-from logging import getLogger, DEBUG
+from logging import DEBUG, getLogger
 from os import mkdir
 from os.path import exists, join
 from pathlib import Path
 from re import compile as compile_regex
+from time import sleep
+from typing import Any, Literal, Optional, TypedDict
 
 from dotenv import load_dotenv
 from requests import get
+from wg_utilities.loggers import add_file_handler, add_stream_handler
 
-from const import FH, SH
+from const import LOG_DIR, TODAY_STR
 
 try:
-    from tkinter import Label, Canvas, CENTER, Tk
+    from tkinter import CENTER, Canvas, Label, Tk
     from tkinter.font import Font
-    from PIL import Image, ImageTk
+
+    from PIL import Image
+    from PIL.ImageTk import PhotoImage
 except ImportError:
+
     from unittest.mock import MagicMock
-    from time import sleep
 
     class TkMagicMock(MagicMock):
         """MagicMock specifically for Tk class"""
 
         @staticmethod
-        def mainloop(*_, **__):
+        def mainloop(*_: Any, **__: Any) -> None:
             """Substitute for TK.mainloop for non-Tk configurations"""
             while True:
                 print("loop")
@@ -37,13 +43,13 @@ except ImportError:
     class ImageMagicMock(MagicMock):
         """MagicMock specifically for Image class"""
 
-        def resize(self, *_, **__):
+        def resize(self, *_: Any, **__: Any) -> None:
             """Placeholder for Image.resize"""
 
-    Label = MagicMock()
-    Canvas = MagicMock()
-    Tk = TkMagicMock()
-    Font = MagicMock()
+    Label = MagicMock()  # type: ignore[misc]
+    Canvas = MagicMock()  # type: ignore[misc]
+    Tk = TkMagicMock()  # type: ignore[misc]
+    Font = MagicMock()  # type: ignore[misc]
     Image = MagicMock()
     ImageTk = MagicMock()
 
@@ -53,25 +59,65 @@ load_dotenv()
 
 LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
-LOGGER.addHandler(FH)
-LOGGER.addHandler(SH)
+add_stream_handler(LOGGER)
+add_file_handler(LOGGER, logfile_path=f"{LOG_DIR}/crt_tv/{TODAY_STR}.log")
+
+
+class DisplayPayloadInfo(TypedDict):
+    """Typing for the payload provided for the display"""
+
+    artwork_url: Optional[str]
+    media_title: str
+    media_artist: str
+    album_name: str
+
+
+class StandardArgsInfo(TypedDict):
+    """Typing for the standard Label/Canvas args"""
+
+    highlightthickness: Literal[0]
+    bd: Literal[0]
+    bg: str
+
+
+class CoordsItemInfo(TypedDict):
+    """Typing for the individual coords objects"""
+
+    x: float
+    y: float
+    anchor: Literal["center"]
+
+
+class CoordsInfo(TypedDict):
+    """Typing for the CrtTv.coords attribute"""
+
+    artwork: CoordsItemInfo
+    media_title: CoordsItemInfo
+    media_artist: CoordsItemInfo
+
+
+class WidgetsInfo(TypedDict):
+    """Typing for the CrtTv.widgets attribute"""
+
+    canvas: Canvas
+    artwork: Label
+    media_title: Label
+    media_artist: Label
 
 
 class CrtTv:
     """CRT TV class for controlling the GUI (not the power state)"""
 
     BG_COLOR = "#000000"
-    STANDARD_ARGS = {"highlightthickness": 0, "bd": 0, "bg": BG_COLOR}
+    STANDARD_ARGS: StandardArgsInfo = {"highlightthickness": 0, "bd": 0, "bg": BG_COLOR}
     CHAR_LIM = 31
     MAX_WAIT_TIME_MS = 10000
     ARTWORK_DIR = join(str(Path.home()), "crt_artwork")
     PATTERN = compile_regex(r"[^\w =\-\(\)<>,.]+")
 
-    def __init__(self):
+    def __init__(self) -> None:
         if not exists(self.ARTWORK_DIR):
             mkdir(self.ARTWORK_DIR)
-
-        self.artwork_path = None
 
         self.root = Tk()
         self.root.attributes("-fullscreen", True)
@@ -79,18 +125,42 @@ class CrtTv:
 
         crt_font = Font(family="Courier New", size=int(0.05 * self.screen_height))
 
-        self.images = {"tk_img": None, "artwork": ""}
+        canvas_widget = Canvas(
+            self.root,
+            width=self.screen_width,
+            height=self.screen_height,
+            **self.STANDARD_ARGS,
+        )
 
-        self.widgets = {
-            "canvas": Canvas(
-                self.root,
-                width=self.screen_width,
-                height=self.screen_height,
-                **self.STANDARD_ARGS,
-            )
+        canvas_widget.place(
+            x=0, y=0, width=self.screen_width, height=self.screen_height
+        )
+
+        self.widgets: WidgetsInfo = {
+            "canvas": canvas_widget,
+            "artwork": Label(canvas_widget, image="", **self.STANDARD_ARGS),
+            "media_title": Label(
+                canvas_widget,
+                text="",
+                font=crt_font,
+                fg="#ffffff",
+                bg=self.BG_COLOR,
+            ),
+            "media_artist": Label(
+                canvas_widget,
+                text="",
+                font=crt_font,
+                fg="#ffffff",
+                bg=self.BG_COLOR,
+            ),
         }
 
-        self.coords = {
+        self.coords: CoordsInfo = {
+            "artwork": {
+                "x": 0.5 * self.screen_width,
+                "y": (0.5 * self.artwork_size) + (0.075 * self.screen_height),
+                "anchor": CENTER,
+            },
             "media_title": {
                 "x": 0.5 * self.screen_width,
                 "y": 0.8 * self.screen_height,
@@ -103,43 +173,20 @@ class CrtTv:
             },
         }
 
-        self.widgets["canvas"].place(
-            x=0, y=0, width=self.screen_width, height=self.screen_height
-        )
+        for widget_name in ("artwork", "media_title", "media_artist"):
+            self.widgets[widget_name].place(  # type: ignore[literal-required]
+                **self.coords[widget_name]  # type: ignore[literal-required]
+            )
 
-        self.widgets["artwork"] = Label(
-            self.widgets["canvas"], image="", **self.STANDARD_ARGS
-        )
-
-        self.widgets["media_title"] = Label(
-            self.widgets["canvas"],
-            text="",
-            font=crt_font,
-            fg="#ffffff",
-            bg=self.BG_COLOR,
-        )
-
-        self.widgets["media_artist"] = Label(
-            self.widgets["canvas"],
-            text="",
-            font=crt_font,
-            fg="#ffffff",
-            bg=self.BG_COLOR,
-        )
-
-        self.widgets["artwork"].place(
-            x=0.5 * self.screen_width,
-            y=(0.5 * self.artwork_size) + (0.075 * self.screen_height),
-            anchor=CENTER,
-        )
-        self.widgets["media_title"].place(**self.coords["media_title"])
-        self.widgets["media_artist"].place(**self.coords["media_artist"])
-
-    def update_display(self, payload):
+    def update_display(self, payload: DisplayPayloadInfo) -> None:
         """Update the artwork and text on the GUI
 
         Args:
-            payload (dict): the payload to use in updating the GUI
+            payload (DisplayPayloadInfo): the payload to use in updating the GUI
+
+        Raises:
+            FileNotFoundError: if the local file can't be found and no URL is provided
+             in the payload
         """
 
         LOGGER.info("Updating display with payload:\t%s", dumps(payload))
@@ -157,7 +204,7 @@ class CrtTv:
                 artist_dir,
             )
 
-        self.artwork_path = join(
+        artwork_path = join(
             artist_dir,
             self.PATTERN.sub("", payload["album_name"] or payload["media_title"])
             .lower()
@@ -165,38 +212,35 @@ class CrtTv:
         )
 
         try:
-            with open(self.artwork_path, "rb") as fin:
-                self.images["tk_img"] = Image.open(BytesIO(fin.read()))
-            LOGGER.debug("Retrieved artwork from `%s`", self.artwork_path)
+            with open(artwork_path, "rb") as fin:
+                tk_img = Image.open(BytesIO(fin.read()))
+            LOGGER.debug("Retrieved artwork from `%s`", artwork_path)
         except FileNotFoundError:
-            artwork_bytes = get(payload["artwork_url"]).content
-            self.images["tk_img"] = Image.open(BytesIO(artwork_bytes))
+            if payload["artwork_url"] is None:
+                raise
 
-            with open(self.artwork_path, "wb") as fout:
+            artwork_bytes = get(payload["artwork_url"]).content
+            tk_img = Image.open(BytesIO(artwork_bytes))
+
+            with open(artwork_path, "wb") as fout:
                 fout.write(artwork_bytes)
 
             LOGGER.info(
                 "Saved artwork for `%s` by `%s` to `%s`",
                 payload["album_name"],
                 payload["media_artist"],
-                self.artwork_path,
-            )
-        except Exception as exc:  # pylint: disable=broad-except
-            LOGGER.error(
-                "Unable to get artwork: `%s - %s`",
-                type(exc).__name__,
-                exc.__str__(),
+                artwork_path,
             )
 
-        self.images["tk_img"] = self.images["tk_img"].resize(
-            (self.artwork_size, self.artwork_size), Image.ANTIALIAS
-        )
-        self.images["artwork"] = ImageTk.PhotoImage(self.images["tk_img"])
+        tk_img = tk_img.resize((self.artwork_size, self.artwork_size), Image.ANTIALIAS)
 
-        self.widgets["artwork"].configure(image=self.images["artwork"])
+        self.widgets["artwork"].configure(image=PhotoImage(tk_img))
 
-        for k, v in payload.items():
-            if k in self.widgets:
+        # `k` can have other values, but only these two are relevant
+        k: Literal["media_title", "media_artist"]
+        v: str
+        for k, v in payload.items():  # type: ignore[assignment]
+            if k in ("media_artist", "media_title"):
                 self.widgets[k].config(text=unescape(v))
                 if len(self.widgets[k]["text"]) > self.CHAR_LIM:
                     self.widgets[k]["text"] = (
@@ -205,7 +249,7 @@ class CrtTv:
 
                     self.hscroll_label(k)
 
-    def hscroll_label(self, k):
+    def hscroll_label(self, k: Literal["media_artist", "media_title"]) -> None:
         """Horizontally scroll a label on the GUI. Used when the text content is wider
         than the available screen space
 
@@ -231,7 +275,7 @@ class CrtTv:
             self.widgets[k].place(**self.coords[k])
 
     @property
-    def screen_width(self):
+    def screen_width(self) -> int:
         """
         Returns:
             int: the width of the CRT's screen
@@ -239,7 +283,7 @@ class CrtTv:
         return self.root.winfo_screenwidth()
 
     @property
-    def screen_height(self):
+    def screen_height(self) -> int:
         """
         Returns:
             int: the height of the CRT's screen
@@ -247,7 +291,7 @@ class CrtTv:
         return self.root.winfo_screenheight()
 
     @property
-    def artwork_size(self):
+    def artwork_size(self) -> int:
         """
         Returns:
             int: the size of the artwork image on the screen in pixels
