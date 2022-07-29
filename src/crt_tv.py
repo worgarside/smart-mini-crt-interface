@@ -16,6 +16,7 @@ from typing import Any, Literal, Optional, TypedDict
 
 from dotenv import load_dotenv
 from requests import get
+from wg_utilities.exceptions import on_exception  # pylint: disable=no-name-in-module
 from wg_utilities.loggers import add_file_handler, add_stream_handler
 
 from const import LOG_DIR, TODAY_STR
@@ -115,6 +116,7 @@ class CrtTv:
     ARTWORK_DIR = join(str(Path.home()), "crt_artwork")
     PATTERN = compile_regex(r"[^\w =\-\(\)<>,.]+")
 
+    @on_exception()  # type: ignore[misc]
     def __init__(self) -> None:
         if not exists(self.ARTWORK_DIR):
             mkdir(self.ARTWORK_DIR)
@@ -178,6 +180,7 @@ class CrtTv:
                 **self.coords[widget_name]  # type: ignore[literal-required]
             )
 
+    @on_exception()  # type: ignore[misc]
     def update_display(self, payload: DisplayPayloadInfo) -> None:
         """Update the artwork and text on the GUI
 
@@ -249,6 +252,7 @@ class CrtTv:
 
                     self.hscroll_label(k)
 
+    @on_exception()  # type: ignore[misc]
     def hscroll_label(self, k: Literal["media_artist", "media_title"]) -> None:
         """Horizontally scroll a label on the GUI. Used when the text content is wider
         than the available screen space

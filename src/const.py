@@ -11,6 +11,7 @@ from typing import TypedDict
 from unittest.mock import MagicMock
 
 from dotenv import load_dotenv
+from wg_utilities.exceptions import on_exception  # pylint: disable=no-name-in-module
 from wg_utilities.loggers import add_file_handler, add_stream_handler
 
 try:
@@ -70,6 +71,7 @@ add_file_handler(LOGGER, logfile_path=f"{LOG_DIR}/const/{TODAY_STR}.log")
 # ################### FUNCTIONS ################### #
 
 
+@on_exception()  # type: ignore[misc]
 def get_crt_config_state() -> bool:
     """Get a config value from the local config file
 
@@ -89,6 +91,7 @@ def get_crt_config_state() -> bool:
     return state
 
 
+@on_exception()  # type: ignore[misc]
 def set_crt_config_state(value: bool) -> None:
     """Sets a config value in the local config file
 
@@ -107,6 +110,7 @@ def set_crt_config_state(value: bool) -> None:
         dump(config, fout)
 
 
+@on_exception()  # type: ignore[misc]
 def switch_crt_on(force_switch_on: bool = False) -> None:
     """Switch the CRT on by setting the GPIO pin to HIGH
 
@@ -122,6 +126,7 @@ def switch_crt_on(force_switch_on: bool = False) -> None:
         LOGGER.debug("Switching display on (but not really)")
 
 
+@on_exception()  # type: ignore[misc]
 def switch_crt_off(force_switch_off: bool = False) -> None:
     """Switch the CRT off by setting the GPIO pin to LOW
 

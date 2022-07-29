@@ -26,6 +26,7 @@ from pychromecast.controllers.media import (
 from pychromecast.discovery import CastBrowser, SimpleCastListener
 from pychromecast.error import UnsupportedNamespace
 from pychromecast.models import CastInfo
+from wg_utilities.exceptions import on_exception  # pylint: disable=no-name-in-module
 from wg_utilities.loggers import add_file_handler, add_stream_handler
 from zeroconf import Zeroconf
 
@@ -79,6 +80,7 @@ class ChromecastMediaListener(MediaStatusListener, ABC):  # type: ignore[misc]
         cast (Chromecast): the Chromecast being monitored
     """
 
+    @on_exception()  # type: ignore[misc]
     def __init__(self, cast: Chromecast) -> None:
         self.cast = cast
         self.name = cast.name
@@ -91,6 +93,7 @@ class ChromecastMediaListener(MediaStatusListener, ABC):  # type: ignore[misc]
         }
         self._previous_state = MEDIA_PLAYER_STATE_UNKNOWN
 
+    @on_exception()  # type: ignore[misc]
     def new_media_status(self, status: MediaStatus) -> None:
         """Method executed when the status of the Chromecast changes
 
@@ -161,6 +164,7 @@ class ChromecastMediaListener(MediaStatusListener, ABC):  # type: ignore[misc]
         self._previous_state = status.player_state
 
 
+@on_exception()  # type: ignore[misc]
 def add_callback(uuid: UUID, _: str) -> None:
     """Callback function for when a Chromecast is discovered
 
@@ -192,6 +196,7 @@ def add_callback(uuid: UUID, _: str) -> None:
         )
 
 
+@on_exception()  # type: ignore[misc]
 def remove_callback(uuid: UUID, _: str) -> None:
     """Callback function for when a discovered Chromecast disappears
 
@@ -211,6 +216,7 @@ def remove_callback(uuid: UUID, _: str) -> None:
         CHROMECAST = None
 
 
+@on_exception()  # type: ignore[misc]
 def main() -> None:
     """Main function for this script"""
     global BROWSER
