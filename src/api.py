@@ -1,7 +1,7 @@
 """
 This module contains the methods used in the API definition
 """
-
+from json import dumps
 from logging import DEBUG, getLogger
 from os import getenv
 
@@ -35,7 +35,7 @@ def crt_state() -> str:
 
     LOGGER.info("API hit on `/crt/state`")
 
-    return str(get_crt_config_state())
+    return dumps({"state": get_crt_config_state()})
 
 
 @app.route("/crt/on", methods=["GET"])
