@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "9815a8e08d9785256bea47432a4cca20a32899e12ee4b770016a15bfb34dd1b8"
+            "sha256": "37584d4654b12cffc565c15da077a2c9b818a12c07dc6c92e63b668582e9b907"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -154,6 +154,13 @@
             ],
             "markers": "python_version >= '3.7'",
             "version": "==2.1.1"
+        },
+        "paho-mqtt": {
+            "hashes": [
+                "sha256:2a8291c81623aec00372b5a85558a372c747cbca8e9934dfe218638b8eefc26f"
+            ],
+            "index": "pypi",
+            "version": "==1.6.1"
         },
         "pigpio": {
             "hashes": [
@@ -359,7 +366,7 @@
                 "sha256:c33ccba33c819596124764c23a97d25f32b28433ba0dedeb77d873a38722c9bc",
                 "sha256:ea6e8fb210b19d950fab93b60c9009226c63a28808bc8386e05301e25883ac0a"
             ],
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5' and python_version < '4.0'",
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5' and python_version < '4'",
             "version": "==1.26.11"
         },
         "werkzeug": {

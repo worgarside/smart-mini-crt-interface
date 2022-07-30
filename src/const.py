@@ -4,20 +4,22 @@ Module for holding all constants and functions to be used across the entire proj
 from datetime import datetime
 from json import dump, load
 from logging import DEBUG, getLogger
-from os import mkdir
+from os import getenv
 from os.path import abspath, dirname, exists, join
 from pathlib import Path
 from typing import TypedDict
-from unittest.mock import MagicMock
 
 from dotenv import load_dotenv
 from wg_utilities.exceptions import on_exception  # pylint: disable=no-name-in-module
+from wg_utilities.functions import force_mkdir
 from wg_utilities.loggers import add_file_handler, add_stream_handler
 
 try:
     from pigpio import OUTPUT
     from pigpio import pi as rasp_pi
 except (AttributeError, ImportError):
+    from unittest.mock import MagicMock
+
     rasp_pi = MagicMock()
     OUTPUT = None
 
@@ -35,19 +37,18 @@ class ConfigInfo(TypedDict):
 TODAY_STR = datetime.today().strftime("%Y-%m-%d")
 
 CRT_PIN = 26
+FAN_PIN = 18
+FAN_MQTT_TOPIC = "/crt-pi/fan/state"
 
-CAST_NAME = "HiFi System"
+CAST_NAME = getenv("TARGET_CHROMECAST_NAME", "HiFi System")
 
 PI = rasp_pi()
 PI.set_mode(CRT_PIN, OUTPUT)
+PI.set_mode(FAN_PIN, OUTPUT)
 
 # ################### DIRECTORIES / FILES ################### #
 
-LOG_DIR = join(str(Path.home()), "logs", "smart-mini-crt-interface")
-
-for _dir in [join(str(Path.home()), "logs"), LOG_DIR]:
-    if not exists(_dir):
-        mkdir(_dir)
+LOG_DIR = force_mkdir(join(str(Path.home()), "logs", "smart-mini-crt-interface"))
 
 CONFIG_FILE = join(abspath(dirname(__file__)), "config.json")
 

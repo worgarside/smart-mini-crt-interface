@@ -10,7 +10,9 @@ from wg_utilities.loggers import add_file_handler, add_stream_handler
 
 from const import (
     CONFIG_FILE,
+    FAN_PIN,
     LOG_DIR,
+    PI,
     TODAY_STR,
     get_crt_config_state,
     set_crt_config_state,
@@ -36,6 +38,15 @@ def crt_state() -> str:
     LOGGER.info("API hit on `/crt/state`")
 
     return dumps({"state": get_crt_config_state()})
+
+
+@app.route("/crt/fan", methods=["GET"])
+def crt_fan() -> str:
+    """API endpoint for getting the CRT state"""
+
+    LOGGER.info("API hit on `/crt/fan`")
+
+    return dumps({"state": PI.read(FAN_PIN)})
 
 
 @app.route("/crt/on", methods=["GET"])

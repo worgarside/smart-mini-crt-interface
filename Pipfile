@@ -18,6 +18,7 @@ tk = "*"
 flask = "*"
 python-kasa = "==0.5.0"
 wg-utilities = "*"
+paho-mqtt = "*"
 
 [requires]
 python_version = "3.8"
