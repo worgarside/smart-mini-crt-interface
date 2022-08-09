@@ -380,19 +380,19 @@
         },
         "werkzeug": {
             "hashes": [
-                "sha256:4d7013ef96fd197d1cdeb03e066c6c5a491ccb44758a5b2b91137319383e5a5a",
-                "sha256:7e1db6a5ba6b9a8be061e47e900456355b8714c0f238b0313f53afce1a55a79a"
+                "sha256:7ea2d48322cc7c0f8b3a215ed73eabd7b5d75d0b50e31ab006286ccff9e00b8f",
+                "sha256:f979ab81f58d7318e064e99c4506445d60135ac5cd2e177a2de0089bfd4c9bd5"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==2.2.1"
+            "version": "==2.2.2"
         },
         "wg-utilities": {
             "hashes": [
-                "sha256:8db0f9c6b856cc7b2aaaa79f6c215e391611f3321742ff11c105e3a9d2423dbc",
-                "sha256:b063291a4785e598ee1833258ddd509739b4c83f605b220a63691995067ed7a9"
+                "sha256:b2096fcf26ada76be8a829866320ae465d1d229181e94ca63bb563c778a024dd",
+                "sha256:b63c9a0b3034d5c236cc88674f101e38435c950f15c54e5d852270bfbd6a4d49"
             ],
             "index": "pypi",
-            "version": "==2.29.0"
+            "version": "==2.29.1"
         },
         "zeroconf": {
             "hashes": [
@@ -661,7 +661,7 @@
                 "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc",
                 "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"
             ],
-            "markers": "python_version < '3.11'",
+            "markers": "python_full_version < '3.11.0a7'",
             "version": "==2.0.1"
         },
         "tomlkit": {
