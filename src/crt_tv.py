@@ -5,27 +5,34 @@ from __future__ import annotations
 
 from html import unescape
 from logging import DEBUG, getLogger
+from pathlib import Path
 from time import sleep
 from typing import Any, Literal, TypedDict
 
-from dotenv import load_dotenv
 from wg_utilities.exceptions import on_exception
 from wg_utilities.loggers import add_file_handler, add_stream_handler
 
 from artwork_image import ArtworkImage
 from const import LOG_DIR, PI, TODAY_STR
 
+LOGGER = getLogger(__name__)
+LOGGER.setLevel(DEBUG)
+add_stream_handler(LOGGER)
+add_file_handler(LOGGER, logfile_path=f"{LOG_DIR}/crt_interface/{TODAY_STR}.log")
+
 try:
     # pylint: disable=unused-import
     from tkinter import CENTER, Canvas, Label, Tk
     from tkinter.font import Font
 
-    from pigpio import OUTPUT
-    from pigpio import pi as rasp_pi
     from PIL import Image
-    from PIL.ImageTk import PhotoImage
-except ImportError:
 
+    # noinspection PyUnresolvedReferences
+    from PIL.ImageTk import PhotoImage
+except ImportError as exc:
+    LOGGER.warning(
+        "Unable to import TK/PIL dependencies, using mocks instead: %s", repr(exc)
+    )
     from unittest.mock import MagicMock
 
     class TkMagicMock(MagicMock):
@@ -38,12 +45,6 @@ except ImportError:
                 print("loop")
                 sleep(1)
 
-    class ImageMagicMock(MagicMock):
-        """MagicMock specifically for Image class"""
-
-        def resize(self, *_: Any, **__: Any) -> None:
-            """Placeholder for Image.resize"""
-
     Label = MagicMock()  # type: ignore[misc]
     Canvas = MagicMock()  # type: ignore[misc]
     Tk = TkMagicMock()  # type: ignore[misc]
@@ -53,15 +54,20 @@ except ImportError:
 
     CENTER = "center"
 
+try:
+    # pylint: disable=unused-import
+    from pigpio import OUTPUT
+    from pigpio import pi as rasp_pi
+except ImportError as exc:
+    LOGGER.warning(
+        "Unable to import GPIO dependencies, using mocks instead: %s", repr(exc)
+    )
+    from unittest.mock import MagicMock
+
     rasp_pi = MagicMock()
     OUTPUT = None
 
-load_dotenv()
-
-LOGGER = getLogger(__name__)
-LOGGER.setLevel(DEBUG)
-add_stream_handler(LOGGER)
-add_file_handler(LOGGER, logfile_path=f"{LOG_DIR}/crt_tv/{TODAY_STR}.log")
+_DEFAULT = object()
 
 
 class StandardArgsInfo(TypedDict):
@@ -104,18 +110,22 @@ class CrtTv:
     STANDARD_ARGS: StandardArgsInfo = {"highlightthickness": 0, "bd": 0, "bg": BG_COLOR}
     CHAR_LIM = 31
 
-    # @on_exception()  # type: ignore[misc]
+    NULL_IMAGE = ArtworkImage(
+        "null", "null", str(Path(__file__).parent.parent / "assets" / "null.png")
+    )
+
+    @on_exception()  # type: ignore[misc]
     def __init__(self, gpio_pin: int) -> None:
-        self.root = Tk()
-        self.root.attributes("-fullscreen", True)
-        self.root.configure(bg=self.BG_COLOR)
+        self._root = Tk()
+        self._root.attributes("-fullscreen", True)
+        self._root.configure(bg=self.BG_COLOR)
 
         self.gpio_pin = gpio_pin
 
         crt_font = Font(family="Courier New", size=int(0.05 * self.screen_height))
 
         canvas_widget = Canvas(
-            self.root,
+            self._root,
             width=self.screen_width,
             height=self.screen_height,
             **self.STANDARD_ARGS,
@@ -144,6 +154,7 @@ class CrtTv:
             ),
         }
 
+        # noinspection PyTypeChecker
         self.coords: CoordsInfo = {
             "artwork": {
                 "x": 0.5 * self.screen_width,
@@ -162,7 +173,14 @@ class CrtTv:
             },
         }
 
-        self.artwork_image: PhotoImage
+        self._title: str
+        self._artist: str
+        self._album: str
+        self._artwork_image: ArtworkImage = self.NULL_IMAGE
+
+        # This is needed to allow the persistence of the PhotoImage instance, otherwise
+        # the image isn't displayed
+        self._artwork_photoimage: PhotoImage
 
         for widget_name in ("artwork", "media_title", "media_artist"):
             self.widgets[widget_name].place(  # type: ignore[literal-required]
@@ -195,6 +213,42 @@ class CrtTv:
             self.coords[k]["x"] = 0.5 * self.screen_width
             self.widgets[k].place(**self.coords[k])
 
+    @on_exception()  # type: ignore[misc]
+    def refresh_display_output(
+        self,
+    ) -> None:
+        """Refresh the display to display current property values"""
+
+        LOGGER.debug(
+            "Updating display with title `%s`, artist `%s`, artwork `%s`",
+            self.title,
+            self.artist,
+            str(self.artwork_image),
+        )
+
+        # noinspection PyAttributeOutsideInit
+        self._artwork_photoimage = PhotoImage(
+            self.artwork_image.get_image(self.artwork_size)
+        )
+        self.widgets["artwork"].configure(image=self._artwork_photoimage)
+
+        k: Literal["media_title", "media_artist"]
+        for k, v in (  # type: ignore[assignment]
+            ("media_title", self.title),
+            ("media_artist", self.artist),
+        ):
+            self.widgets[k].config(text=unescape(v))
+            if len(self.widgets[k]["text"]) > self.CHAR_LIM:
+                # Add the text three times to allow for wrap-around effect
+                self.widgets[k]["text"] = ("  " + self.widgets[k]["text"] + "  ") * 3
+
+                self.hscroll_label(k)
+
+    def start_gui(self) -> None:
+        """Start the Tk mainloop, this blocks until the GUI is closed"""
+        # TODO make this optionally async so other things can run in the background?
+        self._root.mainloop()
+
     def switch_on(self) -> None:
         """Switch on the CRT TV"""
         PI.write(self.gpio_pin, True)
@@ -207,11 +261,16 @@ class CrtTv:
         """Toggle the power state of the CRT TV"""
         PI.write(self.gpio_pin, not self.power_state)
 
-    # @on_exception()  # type: ignore[misc]
-    def update_display(
-        self, title: str, artist: str, artwork_image: ArtworkImage
+    # noinspection PyAttributeOutsideInit
+    def update_display_values(
+        self,
+        *,
+        title: str | None = _DEFAULT,  # type: ignore[assignment]
+        artist: str | None = _DEFAULT,  # type: ignore[assignment]
+        artwork_image: ArtworkImage | None = _DEFAULT,  # type: ignore[assignment]
     ) -> None:
-        """Update the display with the new media information
+        """Update the display with the new media information. An object instance is used
+         as a default so that the values can be removed by setting them to `None`
 
         Args:
             title (str): the song title
@@ -219,21 +278,59 @@ class CrtTv:
             artwork_image (ArtworkImage): the artwork image instance
         """
 
-        LOGGER.debug("Updating display with title `%s`, artist `%s`", title, artist)
+        if title is not _DEFAULT:
+            self._title = title or ""
 
-        self.artwork_image = PhotoImage(artwork_image.get_image(self.artwork_size))
-        self.widgets["artwork"].configure(image=self.artwork_image)
+        if artist is not _DEFAULT:
+            self._artist = artist or ""
 
-        k: Literal["media_title", "media_artist"]
-        for k, v in (  # type: ignore[assignment]
-            ("media_title", title),
-            ("media_artist", artist),
-        ):
-            self.widgets[k].config(text=unescape(v))
-            if len(self.widgets[k]["text"]) > self.CHAR_LIM:
-                self.widgets[k]["text"] = ("  " + self.widgets[k]["text"] + "  ") * 3
+        if artwork_image is not _DEFAULT:
+            self._artwork_image = artwork_image or self.NULL_IMAGE
 
-                self.hscroll_label(k)
+        self.refresh_display_output()
+
+    @property
+    def album(self) -> str:
+        """The album name"""
+        if not hasattr(self, "_album"):
+            # noinspection PyAttributeOutsideInit
+            self._album = ""
+
+        return self._album
+
+    @album.setter
+    def album(self, value: str | None) -> None:
+        """Set the album name"""
+        # noinspection PyAttributeOutsideInit
+        self._album = value or ""
+        self.refresh_display_output()
+
+    @property
+    def artist(self) -> str:
+        """The artist property"""
+        if not hasattr(self, "_artist"):
+            # noinspection PyAttributeOutsideInit
+            self._artist = ""
+
+        return self._artist
+
+    @artist.setter
+    def artist(self, value: str | None) -> None:
+        """The artist property setter"""
+        # noinspection PyAttributeOutsideInit
+        self._artist = value or ""
+        self.refresh_display_output()
+
+    @property
+    def artwork_image(self) -> ArtworkImage:
+        """The artwork image"""
+        return self._artwork_image
+
+    @artwork_image.setter
+    def artwork_image(self, value: ArtworkImage | None) -> None:
+        """The artwork image"""
+        self._artwork_image = value or self.NULL_IMAGE
+        self.refresh_display_output()
 
     @property
     def artwork_size(self) -> int:
@@ -249,7 +346,7 @@ class CrtTv:
         Returns:
             int: the width of the CRT's screen
         """
-        return self.root.winfo_screenwidth()
+        return self._root.winfo_screenwidth()
 
     @property
     def screen_height(self) -> int:
@@ -257,7 +354,23 @@ class CrtTv:
         Returns:
             int: the height of the CRT's screen
         """
-        return self.root.winfo_screenheight()
+        return self._root.winfo_screenheight()
+
+    @property
+    def title(self) -> str:
+        """The title property"""
+        if not hasattr(self, "_title"):
+            # noinspection PyAttributeOutsideInit
+            self._title = ""
+
+        return self._title
+
+    @title.setter
+    def title(self, value: str | None) -> None:
+        """The title property setter"""
+        # noinspection PyAttributeOutsideInit
+        self._title = value or ""
+        self.refresh_display_output()
 
     @property
     def power_state(self) -> bool:
@@ -266,8 +379,3 @@ class CrtTv:
             bool: the power state of the CRT (GPIO pin)
         """
         return bool(PI.read(self.gpio_pin))
-
-
-if __name__ == "__main__":
-    CrtTv(26).switch_on()
-    print(CrtTv(26).power_state)

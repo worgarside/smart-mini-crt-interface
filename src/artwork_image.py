@@ -2,14 +2,23 @@
 from __future__ import annotations
 
 from io import BytesIO
+from logging import DEBUG, getLogger
 from os import mkdir
-from os.path import exists, isdir, join
+from os.path import exists, isdir, isfile, join
 from pathlib import Path
 from re import compile as compile_regex
 
-from PIL.Image import ANTIALIAS, Image
+from PIL.Image import Image, Resampling
 from PIL.Image import open as open_image
 from requests import get
+from wg_utilities.loggers import add_file_handler, add_stream_handler
+
+from const import LOG_DIR, TODAY_STR
+
+LOGGER = getLogger(__name__)
+LOGGER.setLevel(DEBUG)
+add_stream_handler(LOGGER)
+add_file_handler(LOGGER, logfile_path=f"{LOG_DIR}/crt_interface/{TODAY_STR}.log")
 
 
 class ArtworkImage:
@@ -32,10 +41,18 @@ class ArtworkImage:
         if not isdir(self.ARTWORK_DIR / self.artist_directory):
             mkdir(self.ARTWORK_DIR / self.artist_directory)
 
-        artwork_bytes = get(self.url).content
+        if isfile(self.url):
+            LOGGER.debug("Opening local image: %s", self.url)
+            with open(self.url, "rb") as fin:
+                artwork_bytes = fin.read()
+        else:
+            LOGGER.debug("Downloading artwork from remote URL: %s", self.url)
+            artwork_bytes = get(self.url).content
 
         with open(self.file_path, "wb") as fout:
             fout.write(artwork_bytes)
+
+        LOGGER.info("New image saved at %s", self.file_path)
 
     def get_image(self, size: int | None = None) -> Image:
         """Returns the image as a PIL Image object, with optional resizing
@@ -47,6 +64,8 @@ class ArtworkImage:
             Image: PIL Image object of artwork
         """
 
+        LOGGER.debug("Getting image with size %i", size)
+
         if not exists(self.file_path):
             self.download()
 
@@ -54,7 +73,7 @@ class ArtworkImage:
             tk_img = open_image(BytesIO(fin.read()))
 
         if size is not None:
-            tk_img = tk_img.resize((size, size), ANTIALIAS)
+            tk_img = tk_img.resize((size, size), Resampling.LANCZOS)
 
         return tk_img
 
@@ -85,3 +104,11 @@ class ArtworkImage:
             str: fully-qualified path to the artwork image
         """
         return join(self.ARTWORK_DIR, self.artist_directory, self.filename)
+
+    def __str__(self) -> str:
+        """Returns the string representation of the object"""
+        return self.__repr__()
+
+    def __repr__(self) -> str:
+        """Returns the string representation of the object"""
+        return f"ArtworkImage({self.artist}, {self.album}, {self.url})"

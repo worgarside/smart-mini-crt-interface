@@ -20,7 +20,7 @@ load_dotenv()
 LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
 add_stream_handler(LOGGER)
-add_file_handler(LOGGER, logfile_path=f"{LOG_DIR}/gui/{TODAY_STR}.log")
+add_file_handler(LOGGER, logfile_path=f"{LOG_DIR}/crt_interface/{TODAY_STR}.log")
 
 
 CRT = CrtTv(CRT_PIN)
@@ -51,9 +51,13 @@ def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
         "null",
     ):
         CRT.switch_off()
+        CRT.update_display_values(
+            title=payload["title"],
+            artist=payload["artist"],
+            artwork_image=None,
+        )
     else:
-        CRT.switch_on()
-        CRT.update_display(
+        CRT.update_display_values(
             title=payload["title"],
             artist=payload["artist"],
             artwork_image=ArtworkImage(
@@ -62,6 +66,7 @@ def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
                 url=payload["album_artwork_url"],
             ),
         )
+        CRT.switch_on()
 
 
 @on_exception()  # type: ignore[misc]
@@ -108,7 +113,7 @@ def main() -> None:
     MQTT_CLIENT.loop_start()
 
     LOGGER.debug("MQTT client connected, starting CRT mainloop")
-    CRT.root.mainloop()
+    CRT.start_gui()
     MQTT_CLIENT.loop_stop(force=True)
 
 
