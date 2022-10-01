@@ -6,7 +6,7 @@ from typing import Any
 from dotenv import load_dotenv
 from paho.mqtt.client import MQTTMessage
 from paho.mqtt.subscribe import callback
-from wg_utilities.exceptions import on_exception  # pylint: disable=no-name-in-module
+from wg_utilities.exceptions import on_exception
 from wg_utilities.loggers import add_file_handler, add_stream_handler
 
 from const import FAN_MQTT_TOPIC, FAN_PIN, LOG_DIR, PI, TODAY_STR

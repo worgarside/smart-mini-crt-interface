@@ -1,6 +1,8 @@
 """
 Module for holding all constants and functions to be used across the entire project
 """
+from __future__ import annotations
+
 from datetime import datetime
 from json import dump, load
 from logging import DEBUG, getLogger
@@ -10,7 +12,7 @@ from pathlib import Path
 from typing import TypedDict
 
 from dotenv import load_dotenv
-from wg_utilities.exceptions import on_exception  # pylint: disable=no-name-in-module
+from wg_utilities.exceptions import on_exception
 from wg_utilities.functions import force_mkdir
 from wg_utilities.loggers import add_file_handler, add_stream_handler
 
@@ -39,6 +41,7 @@ TODAY_STR = datetime.today().strftime("%Y-%m-%d")
 CRT_PIN = 26
 FAN_PIN = 18
 FAN_MQTT_TOPIC = "/crt-pi/fan/state"
+CRT_DISPLAY_MQTT_TOPIC = "/crt-pi/display/update_display"
 
 CAST_NAME = getenv("TARGET_CHROMECAST_NAME", "HiFi System")
 

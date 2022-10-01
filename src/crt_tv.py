@@ -4,27 +4,24 @@ This module contains the class for controlling the CRT TV GUI
 from __future__ import annotations
 
 from html import unescape
-from io import BytesIO
-from json import dumps
 from logging import DEBUG, getLogger
-from os import mkdir
-from os.path import exists, join
-from pathlib import Path
-from re import compile as compile_regex
 from time import sleep
-from typing import Any, Literal, Optional, TypedDict
+from typing import Any, Literal, TypedDict
 
 from dotenv import load_dotenv
-from requests import get
-from wg_utilities.exceptions import on_exception  # pylint: disable=no-name-in-module
+from wg_utilities.exceptions import on_exception
 from wg_utilities.loggers import add_file_handler, add_stream_handler
 
-from const import LOG_DIR, TODAY_STR
+from artwork_image import ArtworkImage
+from const import LOG_DIR, PI, TODAY_STR
 
 try:
+    # pylint: disable=unused-import
     from tkinter import CENTER, Canvas, Label, Tk
     from tkinter.font import Font
 
+    from pigpio import OUTPUT
+    from pigpio import pi as rasp_pi
     from PIL import Image
     from PIL.ImageTk import PhotoImage
 except ImportError:
@@ -56,21 +53,15 @@ except ImportError:
 
     CENTER = "center"
 
+    rasp_pi = MagicMock()
+    OUTPUT = None
+
 load_dotenv()
 
 LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
 add_stream_handler(LOGGER)
 add_file_handler(LOGGER, logfile_path=f"{LOG_DIR}/crt_tv/{TODAY_STR}.log")
-
-
-class DisplayPayloadInfo(TypedDict):
-    """Typing for the payload provided for the display"""
-
-    artwork_url: Optional[str]
-    media_title: str
-    media_artist: str
-    album_name: str
 
 
 class StandardArgsInfo(TypedDict):
@@ -98,7 +89,7 @@ class CoordsInfo(TypedDict):
 
 
 class WidgetsInfo(TypedDict):
-    """Typing for the CrtTv.widgets attribute"""
+    """Typing for the `CrtTv.widgets` attribute"""
 
     canvas: Canvas
     artwork: Label
@@ -112,18 +103,14 @@ class CrtTv:
     BG_COLOR = "#000000"
     STANDARD_ARGS: StandardArgsInfo = {"highlightthickness": 0, "bd": 0, "bg": BG_COLOR}
     CHAR_LIM = 31
-    MAX_WAIT_TIME_MS = 10000
-    ARTWORK_DIR = join(str(Path.home()), "crt_artwork")
-    PATTERN = compile_regex(r"[^\w =\-\(\)<>,.]+")
 
-    @on_exception()  # type: ignore[misc]
-    def __init__(self) -> None:
-        if not exists(self.ARTWORK_DIR):
-            mkdir(self.ARTWORK_DIR)
-
+    # @on_exception()  # type: ignore[misc]
+    def __init__(self, gpio_pin: int) -> None:
         self.root = Tk()
         self.root.attributes("-fullscreen", True)
         self.root.configure(bg=self.BG_COLOR)
+
+        self.gpio_pin = gpio_pin
 
         crt_font = Font(family="Courier New", size=int(0.05 * self.screen_height))
 
@@ -183,82 +170,6 @@ class CrtTv:
             )
 
     @on_exception()  # type: ignore[misc]
-    def update_display(self, payload: DisplayPayloadInfo) -> None:
-        """Update the artwork and text on the GUI
-
-        Args:
-            payload (DisplayPayloadInfo): the payload to use in updating the GUI
-
-        Raises:
-            FileNotFoundError: if the local file can't be found and no URL is provided
-             in the payload
-        """
-
-        if all(bool(v) is False for v in payload.values()):
-            LOGGER.warning("Empty payload provided, not updating display")
-            return
-
-        LOGGER.info("Updating display with payload:\t%s", dumps(payload))
-
-        if not exists(
-            artist_dir := join(
-                self.ARTWORK_DIR,
-                self.PATTERN.sub("", payload["media_artist"]).lower().replace(" ", "_"),
-            )
-        ):
-            mkdir(artist_dir)
-            LOGGER.info(
-                "Created artwork directory for `%s`: `%s`",
-                payload["media_artist"],
-                artist_dir,
-            )
-
-        artwork_path = join(
-            artist_dir,
-            self.PATTERN.sub("", payload["album_name"] or payload["media_title"])
-            .lower()
-            .replace(" ", "_"),
-        )
-
-        try:
-            with open(artwork_path, "rb") as fin:
-                tk_img = Image.open(BytesIO(fin.read()))
-            LOGGER.debug("Retrieved artwork from `%s`", artwork_path)
-        except FileNotFoundError:
-            if payload["artwork_url"] is None:
-                raise
-
-            artwork_bytes = get(payload["artwork_url"]).content
-            tk_img = Image.open(BytesIO(artwork_bytes))
-
-            with open(artwork_path, "wb") as fout:
-                fout.write(artwork_bytes)
-
-            LOGGER.info(
-                "Saved artwork for `%s` by `%s` to `%s`",
-                payload["album_name"],
-                payload["media_artist"],
-                artwork_path,
-            )
-
-        tk_img = tk_img.resize((self.artwork_size, self.artwork_size), Image.ANTIALIAS)
-        self.artwork_image = PhotoImage(tk_img)
-        self.widgets["artwork"].configure(image=self.artwork_image)
-
-        # `k` can have other values, but only these two are relevant
-        k: Literal["media_title", "media_artist"]
-        v: str
-        for k, v in payload.items():  # type: ignore[assignment]
-            if k in ("media_artist", "media_title"):
-                self.widgets[k].config(text=unescape(v))
-                if len(self.widgets[k]["text"]) > self.CHAR_LIM:
-                    self.widgets[k]["text"] = (
-                        "  " + self.widgets[k]["text"] + "  "
-                    ) * 3
-
-                    self.hscroll_label(k)
-
-    @on_exception()  # type: ignore[misc]
     def hscroll_label(self, k: Literal["media_artist", "media_title"]) -> None:
         """Horizontally scroll a label on the GUI. Used when the text content is wider
         than the available screen space
@@ -284,6 +195,54 @@ class CrtTv:
             self.coords[k]["x"] = 0.5 * self.screen_width
             self.widgets[k].place(**self.coords[k])
 
+    def switch_on(self) -> None:
+        """Switch on the CRT TV"""
+        PI.write(self.gpio_pin, True)
+
+    def switch_off(self) -> None:
+        """Switch off the CRT TV"""
+        PI.write(self.gpio_pin, False)
+
+    def toggle_state(self) -> None:
+        """Toggle the power state of the CRT TV"""
+        PI.write(self.gpio_pin, not self.power_state)
+
+    # @on_exception()  # type: ignore[misc]
+    def update_display(
+        self, title: str, artist: str, artwork_image: ArtworkImage
+    ) -> None:
+        """Update the display with the new media information
+
+        Args:
+            title (str): the song title
+            artist (str): the artist(s) name)
+            artwork_image (ArtworkImage): the artwork image instance
+        """
+
+        LOGGER.debug("Updating display with title `%s`, artist `%s`", title, artist)
+
+        self.artwork_image = PhotoImage(artwork_image.get_image(self.artwork_size))
+        self.widgets["artwork"].configure(image=self.artwork_image)
+
+        k: Literal["media_title", "media_artist"]
+        for k, v in (  # type: ignore[assignment]
+            ("media_title", title),
+            ("media_artist", artist),
+        ):
+            self.widgets[k].config(text=unescape(v))
+            if len(self.widgets[k]["text"]) > self.CHAR_LIM:
+                self.widgets[k]["text"] = ("  " + self.widgets[k]["text"] + "  ") * 3
+
+                self.hscroll_label(k)
+
+    @property
+    def artwork_size(self) -> int:
+        """
+        Returns:
+            int: the size of the artwork image on the screen in pixels
+        """
+        return int(0.65 * self.screen_height)
+
     @property
     def screen_width(self) -> int:
         """
@@ -301,9 +260,14 @@ class CrtTv:
         return self.root.winfo_screenheight()
 
     @property
-    def artwork_size(self) -> int:
+    def power_state(self) -> bool:
         """
         Returns:
-            int: the size of the artwork image on the screen in pixels
+            bool: the power state of the CRT (GPIO pin)
         """
-        return int(0.65 * self.screen_height)
+        return bool(PI.read(self.gpio_pin))
+
+
+if __name__ == "__main__":
+    CrtTv(26).switch_on()
+    print(CrtTv(26).power_state)

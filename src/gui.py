@@ -1,37 +1,19 @@
 """
 Module for holding the main controller function(s) for controlling the GUI
 """
-# pylint: disable=global-statement
-from abc import ABC
+from json import dumps, loads
 from logging import DEBUG, getLogger
-from os import environ, getenv
-from re import sub
-from time import sleep
-from typing import List
-from uuid import UUID
+from os import getenv
+from typing import Any
 
 from dotenv import load_dotenv
-from kasa import Discover, SmartPlug
-from pychromecast import Chromecast
-from pychromecast.controllers.media import (
-    MEDIA_PLAYER_STATE_BUFFERING,
-    MEDIA_PLAYER_STATE_IDLE,
-    MEDIA_PLAYER_STATE_PAUSED,
-    MEDIA_PLAYER_STATE_PLAYING,
-    MEDIA_PLAYER_STATE_UNKNOWN,
-    MediaImage,
-    MediaStatus,
-    MediaStatusListener,
-)
-from pychromecast.discovery import CastBrowser, SimpleCastListener
-from pychromecast.error import UnsupportedNamespace
-from pychromecast.models import CastInfo
-from wg_utilities.exceptions import on_exception  # pylint: disable=no-name-in-module
+from paho.mqtt.client import Client, MQTTMessage
+from wg_utilities.exceptions import on_exception
 from wg_utilities.loggers import add_file_handler, add_stream_handler
-from zeroconf import Zeroconf
 
-from const import CONFIG_FILE, LOG_DIR, TODAY_STR, switch_crt_off, switch_crt_on
-from crt_tv import CrtTv, DisplayPayloadInfo
+from artwork_image import ArtworkImage
+from const import CRT_DISPLAY_MQTT_TOPIC, CRT_PIN, LOG_DIR, TODAY_STR
+from crt_tv import CrtTv
 
 load_dotenv()
 
@@ -40,226 +22,94 @@ LOGGER.setLevel(DEBUG)
 add_stream_handler(LOGGER)
 add_file_handler(LOGGER, logfile_path=f"{LOG_DIR}/gui/{TODAY_STR}.log")
 
-LOGGER.debug("Config file is `%s`", CONFIG_FILE)
 
-#############
-# Constants #
-#############
+CRT = CrtTv(CRT_PIN)
+MQTT_CLIENT = Client()
+MQTT_CLIENT.username_pw_set(
+    username=getenv("MQTT_USERNAME"), password=getenv("MQTT_PASSWORD")
+)
 
-CRT = CrtTv()
-
-TARGET_CHROMECAST_NAME = environ["TARGET_CHROMECAST_NAME"]
-
-BROWSER: CastBrowser = None  # noqa
-CHROMECAST: Chromecast = None  # noqa
-
-ZCONF = Zeroconf()
+MQTT_HOST = getenv("MQTT_HOST")
 
 
-if int(getenv("CONTROL_HIFI_AMP", "0")) == 1:
-    from asyncio import run
+@on_exception()  # type: ignore[misc]
+def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
+    """Callback method for updating env vars on MQTT message
 
-    for ip, device in run(Discover.discover()).items():
-        if device.alias.lower() == "hifi amp":
-            LOGGER.info("Found HiFi Amp on IP `%s`", ip)
-            HIFI_AMP = SmartPlug(ip)
-            break
+    Args:
+        message (MQTTMessage): the message object from the MQTT subscription
+    """
+    payload = loads(message.payload.decode())
 
-        LOGGER.debug("Found `%s`, continuing search...", device.alias.lower())
+    LOGGER.debug("Received payload: %s", dumps(payload))
+
+    if payload["state"] == "off" or payload["album_artwork_url"] in (
+        None,
+        "",
+        "None",
+        "none",
+        "null",
+    ):
+        CRT.switch_off()
     else:
-        run(Discover.discover())
-        raise Exception("Unable to find HiFi Amp SmartPlug")
-else:
-    HIFI_AMP = None
-
-
-class ChromecastMediaListener(MediaStatusListener, ABC):  # type: ignore[misc]
-    """Class for listening to the Chromecast media status
-
-    Args:
-        cast (Chromecast): the Chromecast being monitored
-    """
-
-    @on_exception()  # type: ignore[misc]
-    def __init__(self, cast: Chromecast) -> None:
-        self.cast = cast
-        self.name = cast.name
-
-        self._previous_payload: DisplayPayloadInfo = {
-            "artwork_url": None,
-            "media_artist": "",
-            "media_title": "",
-            "album_name": "",
-        }
-        self._previous_state = MEDIA_PLAYER_STATE_UNKNOWN
-
-    @on_exception()  # type: ignore[misc]
-    def new_media_status(self, status: MediaStatus) -> None:
-        """Method executed when the status of the Chromecast changes
-
-        Args:
-            status (MediaStatus): the new status of the Chromecast's media
-        """
-
-        if status.player_state == self._previous_state:
-            LOGGER.debug("No change in state, returning...")
-            return
-
-        available_artwork_images: List[MediaImage] = sorted(
-            status.images,
-            key=lambda img: img.height,  # type: ignore[no-any-return]
-            reverse=True,
-        )
-
-        payload: DisplayPayloadInfo = {
-            "artwork_url": available_artwork_images[0].url
-            if len(available_artwork_images) > 0
-            else None,
-            "media_title": sub(r".mp3$", "", status.title or ""),
-            "media_artist": status.artist or "",
-            "album_name": status.album_name,
-        }
-
-        if status.player_state in {
-            MEDIA_PLAYER_STATE_PLAYING,
-            MEDIA_PLAYER_STATE_PAUSED,
-            MEDIA_PLAYER_STATE_BUFFERING,
-            MEDIA_PLAYER_STATE_IDLE,
-        }:
-            LOGGER.info(
-                "MediaStatus.player_state is `%s`. Switching on", status.player_state
-            )
-            switch_crt_on(self._previous_state == MEDIA_PLAYER_STATE_UNKNOWN)
-
-            if HIFI_AMP:
-                run(HIFI_AMP.turn_on())
-
-            if payload != self._previous_payload:
-                self._previous_payload = payload
-                CRT.update_display(payload)
-            else:
-                LOGGER.debug("No change to core payload")
-
-        elif status.player_state in {
-            MEDIA_PLAYER_STATE_UNKNOWN,
-        }:
-            LOGGER.info(
-                "MediaStatus.player_state is `%s`. Switching off", status.player_state
-            )
-            switch_crt_off(
-                force_switch_off=self._previous_state
-                in {
-                    MEDIA_PLAYER_STATE_PLAYING,
-                    MEDIA_PLAYER_STATE_PAUSED,
-                    MEDIA_PLAYER_STATE_BUFFERING,
-                    MEDIA_PLAYER_STATE_IDLE,
-                }
-            )
-        else:
-            LOGGER.error(
-                "`MediaStatus.player_state` in unexpected stater: `%s`",
-                status.player_state,
-            )
-
-        self._previous_state = status.player_state
-
-    def load_media_failed(self, item: int, error_code: int) -> None:
-        """Placeholder to satisfy the reqs of an abstract class, doesn't actually
-        do anything
-        """
-
-
-@on_exception()  # type: ignore[misc]
-def add_callback(uuid: UUID, _: str) -> None:
-    """Callback function for when a Chromecast is discovered
-
-    Args:
-        uuid (UUID): the CC's UUID
-        _ (str) the name of the service
-
-    """
-    global CHROMECAST
-
-    if CHROMECAST:
-        return
-
-    cast_info: CastInfo = BROWSER.services.get(uuid)
-
-    if not cast_info:
-        print(f"No service found with UUID {uuid} in browser")
-        return
-
-    print(f"Found {cast_info.friendly_name} with UUID {uuid}")
-
-    if (
-        cast_info.friendly_name.lower().strip()
-        == TARGET_CHROMECAST_NAME.lower().strip()
-    ):
-        CHROMECAST = Chromecast(
-            cast_info=cast_info,
-            zconf=ZCONF,
+        CRT.switch_on()
+        CRT.update_display(
+            title=payload["title"],
+            artist=payload["artist"],
+            artwork_image=ArtworkImage(
+                artist=payload["artist"],
+                album=payload["album"],
+                url=payload["album_artwork_url"],
+            ),
         )
 
 
 @on_exception()  # type: ignore[misc]
-def remove_callback(uuid: UUID, _: str) -> None:
-    """Callback function for when a discovered Chromecast disappears
+def on_connect(
+    client: Client, userdata: dict[str, object], flags: dict[str, object], rc: int
+) -> None:
+    """Called when the broker responds to our connection request.
 
     Args:
-        uuid (UUID): the UUID of the removed Chromecast
-        _ (str) the name of the service
+        client (Client): the client instance for this callback
+        userdata (dict): the private user data as set in Client() or userdata_set()
+        flags (dict): response flags sent by the broker
+        rc (int): the connection result
     """
+    _ = client, userdata, flags, rc
+    LOGGER.debug("MQTT Client connected")
 
-    global CHROMECAST
 
-    cast_info: CastInfo = BROWSER.services.get(uuid)
+@on_exception()  # type: ignore[misc]
+def on_disconnect(client: Client, userdata: dict[str, object], rc: int) -> None:
+    """Called when the client disconnects from the broker
 
-    if (
-        cast_info.friendly_name.lower().strip()
-        == TARGET_CHROMECAST_NAME.lower().strip()
-    ):
-        CHROMECAST = None
+    Args:
+        client (Client): the client instance for this callback
+        userdata (dict): the private user data as set in Client() or userdata_set()
+        rc (int): the connection result
+    """
+    _ = client, userdata, rc
+
+    LOGGER.debug("MQTT Client disconnected")
+    MQTT_CLIENT.connect(MQTT_HOST)
 
 
 @on_exception()  # type: ignore[misc]
 def main() -> None:
     """Main function for this script"""
-    global BROWSER
 
-    BROWSER = CastBrowser(
-        SimpleCastListener(
-            add_callback=add_callback,
-            remove_callback=remove_callback,
-        ),
-        zeroconf_instance=ZCONF,
-    )
-    BROWSER.start_discovery()
+    MQTT_CLIENT.on_connect = on_connect
+    MQTT_CLIENT.on_disconnect = on_disconnect
+    MQTT_CLIENT.on_message = on_message
 
-    while not CHROMECAST:
-        print(
-            f"Found {BROWSER.count} devices so far: `"
-            + "`, `".join(
-                cast_info.friendly_name for cast_info in BROWSER.services.values()
-            )
-            + "`"
-        )
-        sleep(1)
+    MQTT_CLIENT.connect(MQTT_HOST)
+    MQTT_CLIENT.subscribe(CRT_DISPLAY_MQTT_TOPIC)
+    MQTT_CLIENT.loop_start()
 
-    CHROMECAST.wait()
-    CHROMECAST.media_controller.register_status_listener(
-        ChromecastMediaListener(CHROMECAST)
-    )
-
-    try:
-        LOGGER.debug("Running force update")
-        CHROMECAST.media_controller.update_status()
-    except UnsupportedNamespace as exc:
-        LOGGER.error("%s - %s", type(exc).__name__, str(exc))
-
+    LOGGER.debug("MQTT client connected, starting CRT mainloop")
     CRT.root.mainloop()
-
-    # Shut down discovery
-    BROWSER.stop_discovery()
+    MQTT_CLIENT.loop_stop(force=True)
 
 
 if __name__ == "__main__":
