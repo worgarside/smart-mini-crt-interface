@@ -129,6 +129,8 @@ def on_disconnect(client: Client, userdata: dict[str, object], rc: int) -> None:
 def main() -> None:
     """Main function for this script"""
 
+    LOGGER.info("Starting CRT Interface (%ix%i)", CRT.screen_width, CRT.screen_height)
+
     MQTT_CLIENT.on_connect = on_connect
     MQTT_CLIENT.on_disconnect = on_disconnect
     MQTT_CLIENT.on_message = on_message
