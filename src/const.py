@@ -42,6 +42,7 @@ FAN_PIN = 18
 FAN_MQTT_TOPIC = "/crt-pi/fan/state"
 CRT_DISPLAY_MQTT_TOPIC = "/crt-pi/display/update_display"
 
+FORCE_HA_UPDATE_TOPIC = "/home-assistant/script/crt_pi_update_display/run"
 HA_CRT_PI_STATE_FROM_CRT_TOPIC = "/home-assistant/crt-pi/state-from-crt"
 HA_CRT_PI_STATE_FROM_HA_TOPIC = "/home-assistant/crt-pi/state-from-ha"
 

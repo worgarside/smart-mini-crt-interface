@@ -17,7 +17,13 @@ from wg_utilities.exceptions import on_exception
 from wg_utilities.loggers import add_file_handler, add_stream_handler
 
 from artwork_image import ArtworkImage
-from const import HA_CRT_PI_STATE_FROM_CRT_TOPIC, LOG_DIR, PI, TODAY_STR
+from const import (
+    FORCE_HA_UPDATE_TOPIC,
+    HA_CRT_PI_STATE_FROM_CRT_TOPIC,
+    LOG_DIR,
+    PI,
+    TODAY_STR,
+)
 
 load_dotenv()
 
@@ -129,7 +135,7 @@ class CrtTv:
     )
 
     @on_exception()  # type: ignore[misc]
-    def __init__(self, gpio_pin: int) -> None:
+    def __init__(self, gpio_pin: int, force_ha_update: bool = True) -> None:
         self._root = Tk()
         self._root.attributes("-fullscreen", True)
         self._root.configure(bg=self.BG_COLOR)
@@ -200,6 +206,9 @@ class CrtTv:
             self.widgets[widget_name].place(  # type: ignore[literal-required]
                 **self.coords[widget_name]  # type: ignore[literal-required]
             )
+
+        if force_ha_update:
+            single(FORCE_HA_UPDATE_TOPIC, payload=True, **MQTT_AUTH_KWARGS)
 
     @on_exception()  # type: ignore[misc]
     def hscroll_label(self, k: Literal["media_artist", "media_title"]) -> None:
