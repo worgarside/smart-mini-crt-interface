@@ -9,7 +9,6 @@ from flask import Flask
 from wg_utilities.loggers import add_file_handler, add_stream_handler
 
 from const import (
-    CONFIG_FILE,
     FAN_PIN,
     LOG_DIR,
     PI,
@@ -24,8 +23,6 @@ LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
 add_stream_handler(LOGGER)
 add_file_handler(LOGGER, logfile_path=f"{LOG_DIR}/api/{TODAY_STR}.log")
-
-LOGGER.debug("Config file is `%s`", CONFIG_FILE)
 
 app = Flask(__name__)
 app.config["DEBUG"] = False

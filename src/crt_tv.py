@@ -5,15 +5,21 @@ from __future__ import annotations
 
 from html import unescape
 from logging import DEBUG, getLogger
+from os import getenv
 from pathlib import Path
+from textwrap import dedent
 from time import sleep
 from typing import Any, Literal, TypedDict
 
+from dotenv import load_dotenv
+from paho.mqtt.publish import single
 from wg_utilities.exceptions import on_exception
 from wg_utilities.loggers import add_file_handler, add_stream_handler
 
 from artwork_image import ArtworkImage
-from const import LOG_DIR, PI, TODAY_STR
+from const import HA_CRT_PI_STATE_FROM_CRT_TOPIC, LOG_DIR, PI, TODAY_STR
+
+load_dotenv()
 
 LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
@@ -68,6 +74,14 @@ except ImportError as exc:
     OUTPUT = None
 
 _DEFAULT = object()
+
+MQTT_AUTH_KWARGS = {
+    "hostname": getenv("MQTT_HOST"),
+    "auth": {
+        "username": getenv("MQTT_USERNAME"),
+        "password": getenv("MQTT_PASSWORD"),
+    },
+}
 
 
 class StandardArgsInfo(TypedDict):
@@ -249,17 +263,45 @@ class CrtTv:
         # TODO make this optionally async so other things can run in the background?
         self._root.mainloop()
 
-    def switch_on(self) -> None:
-        """Switch on the CRT TV"""
+    def switch_on(self, *, notify_ha: bool = False) -> None:
+        """Switch on the CRT TV
+
+        Args:
+            notify_ha (bool): Whether to notify Home Assistant of the state change.
+                Defaults to False.
+        """
+        LOGGER.debug("Switching on CRT TV")
         PI.write(self.gpio_pin, True)
+        if notify_ha:
+            single(HA_CRT_PI_STATE_FROM_CRT_TOPIC, payload=True, **MQTT_AUTH_KWARGS)
 
-    def switch_off(self) -> None:
-        """Switch off the CRT TV"""
+    def switch_off(self, *, notify_ha: bool = False) -> None:
+        """Switch off the CRT TV
+
+        Args:
+            notify_ha (bool): Whether to notify Home Assistant of the state change.
+        """
+        LOGGER.debug("Switching off CRT TV")
         PI.write(self.gpio_pin, False)
+        if notify_ha:
+            single(HA_CRT_PI_STATE_FROM_CRT_TOPIC, payload=False, **MQTT_AUTH_KWARGS)
 
-    def toggle_state(self) -> None:
-        """Toggle the power state of the CRT TV"""
-        PI.write(self.gpio_pin, not self.power_state)
+    def toggle_state(self, *, notify_ha: bool = False) -> None:
+        """Toggle the power state of the CRT TV
+
+        Args:
+            notify_ha (bool): Whether to notify Home Assistant of the state change.
+        """
+        new_state = not self.power_state
+
+        LOGGER.debug("Toggling CRT TV power state to %s", new_state)
+
+        PI.write(self.gpio_pin, new_state)
+
+        if notify_ha:
+            single(
+                HA_CRT_PI_STATE_FROM_CRT_TOPIC, payload=new_state, **MQTT_AUTH_KWARGS
+            )
 
     # noinspection PyAttributeOutsideInit
     def update_display_values(
@@ -339,6 +381,24 @@ class CrtTv:
             int: the size of the artwork image on the screen in pixels
         """
         return int(0.65 * self.screen_height)
+
+    @property
+    def current_state_log_output(self) -> str:
+        """
+        Returns:
+            str: a useful output of the current state of the CRT for logging
+        """
+
+        return dedent(
+            f"""
+        Title:   {self.title}
+        Artist:  {self.artist}
+        Album:   {self.album}
+        Artwork: {self.artwork_image!r}
+
+        State:   {self.power_state}
+        """
+        ).strip()
 
     @property
     def screen_width(self) -> int:

@@ -12,7 +12,13 @@ from wg_utilities.exceptions import on_exception
 from wg_utilities.loggers import add_file_handler, add_stream_handler
 
 from artwork_image import ArtworkImage
-from const import CRT_DISPLAY_MQTT_TOPIC, CRT_PIN, LOG_DIR, TODAY_STR
+from const import (
+    CRT_DISPLAY_MQTT_TOPIC,
+    CRT_PIN,
+    HA_CRT_PI_STATE_FROM_HA_TOPIC,
+    LOG_DIR,
+    TODAY_STR,
+)
 from crt_tv import CrtTv
 
 load_dotenv()
@@ -38,35 +44,54 @@ def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
 
     Args:
         message (MQTTMessage): the message object from the MQTT subscription
+
+    Raises:
+        ValueError: if the state-from-ha topic receives an invalid payload
     """
-    payload = loads(message.payload.decode())
 
-    LOGGER.debug("Received payload: %s", dumps(payload))
+    if message.topic == HA_CRT_PI_STATE_FROM_HA_TOPIC:
+        if message.payload.decode() == "on":
+            CRT.switch_on()
+        elif message.payload.decode() == "off":
+            CRT.switch_off()
+        else:
+            raise ValueError(
+                f"Invalid payload received from HA on topic `{message.topic}`: "
+                f"{message.payload.decode()}",
+            )
+    elif message.topic == CRT_DISPLAY_MQTT_TOPIC:
+        payload = loads(message.payload.decode())
 
-    if payload["state"] == "off" or payload["album_artwork_url"] in (
-        None,
-        "",
-        "None",
-        "none",
-        "null",
-    ):
-        CRT.switch_off()
-        CRT.update_display_values(
-            title=payload["title"],
-            artist=payload["artist"],
-            artwork_image=None,
-        )
-    else:
-        CRT.update_display_values(
-            title=payload["title"],
-            artist=payload["artist"],
-            artwork_image=ArtworkImage(
+        LOGGER.debug("Received payload: %s", dumps(payload))
+
+        if payload["state"] == "off" or payload["album_artwork_url"] in (
+            None,
+            "",
+            "None",
+            "none",
+            "null",
+        ):
+            CRT.switch_off(notify_ha=True)
+            CRT.update_display_values(
+                title=payload.get("title"),
+                artist=payload.get("artist"),
+                artwork_image=None,
+            )
+            CRT.album = payload.get("album")
+        else:
+            CRT.update_display_values(
+                title=payload["title"],
                 artist=payload["artist"],
-                album=payload["album"],
-                url=payload["album_artwork_url"],
-            ),
-        )
-        CRT.switch_on()
+                artwork_image=ArtworkImage(
+                    artist=payload.get("artist"),
+                    album=payload.get("album"),
+                    url=payload.get("album_artwork_url"),
+                ),
+            )
+            CRT.album = payload.get("album")
+            CRT.switch_on(notify_ha=True)
+
+        LOGGER.debug(CRT.current_state_log_output)
 
 
 @on_exception()  # type: ignore[misc]
@@ -110,6 +135,7 @@ def main() -> None:
 
     MQTT_CLIENT.connect(MQTT_HOST)
     MQTT_CLIENT.subscribe(CRT_DISPLAY_MQTT_TOPIC)
+    MQTT_CLIENT.subscribe(HA_CRT_PI_STATE_FROM_HA_TOPIC)
     MQTT_CLIENT.loop_start()
 
     LOGGER.debug("MQTT client connected, starting CRT mainloop")

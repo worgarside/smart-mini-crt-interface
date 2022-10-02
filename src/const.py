@@ -4,10 +4,9 @@ Module for holding all constants and functions to be used across the entire proj
 from __future__ import annotations
 
 from datetime import datetime
-from json import dump, load
 from logging import DEBUG, getLogger
 from os import getenv
-from os.path import abspath, dirname, exists, join
+from os.path import join
 from pathlib import Path
 from typing import TypedDict
 
@@ -43,6 +42,9 @@ FAN_PIN = 18
 FAN_MQTT_TOPIC = "/crt-pi/fan/state"
 CRT_DISPLAY_MQTT_TOPIC = "/crt-pi/display/update_display"
 
+HA_CRT_PI_STATE_FROM_CRT_TOPIC = "/home-assistant/crt-pi/state-from-crt"
+HA_CRT_PI_STATE_FROM_HA_TOPIC = "/home-assistant/crt-pi/state-from-ha"
+
 CAST_NAME = getenv("TARGET_CHROMECAST_NAME", "HiFi System")
 
 PI = rasp_pi()
@@ -52,18 +54,6 @@ PI.set_mode(FAN_PIN, OUTPUT)
 # ################### DIRECTORIES / FILES ################### #
 
 LOG_DIR = force_mkdir(join(str(Path.home()), "logs", "smart-mini-crt-interface"))
-
-CONFIG_FILE = join(abspath(dirname(__file__)), "config.json")
-
-_DEFAULT_CONFIG = {"crtState": True}
-
-if not exists(CONFIG_FILE):
-    with open(CONFIG_FILE, "w", encoding="utf-8") as _fout:
-        dump(_DEFAULT_CONFIG, _fout)
-else:
-    with open(CONFIG_FILE, encoding="utf-8") as _fin:
-        loaded_config = load(_fin)
-
 
 # ################### LOGGING ################### #
 
@@ -85,10 +75,7 @@ def get_crt_config_state() -> bool:
 
     LOGGER.debug("Getting config for CRT state")
 
-    with open(CONFIG_FILE, encoding="utf-8") as fin:
-        config: ConfigInfo = load(fin)
-
-    state = config.get("crtState", True)
+    state = bool(PI.read(CRT_PIN))
 
     LOGGER.debug("Value is `%s`", state)
 
@@ -104,14 +91,6 @@ def set_crt_config_state(value: bool) -> None:
     """
 
     LOGGER.debug("Setting config to `%s`", value)
-
-    with open(CONFIG_FILE, encoding="utf-8") as fin:
-        config: ConfigInfo = load(fin)
-
-    config["crtState"] = value
-
-    with open(CONFIG_FILE, "w", encoding="utf-8") as fout:
-        dump(config, fout)
 
 
 @on_exception()  # type: ignore[misc]
