@@ -178,17 +178,17 @@ class CrtTv:
         self.coords: CoordsInfo = {
             "artwork": {
                 "x": 0.5 * self.screen_width,
-                "y": (0.5 * self.artwork_size) + (0.075 * self.screen_height),
+                "y": (0.5 * self.artwork_size) + (0.075 * self.screen_height) + 20,
                 "anchor": CENTER,
             },
             "media_title": {
                 "x": 0.5 * self.screen_width,
-                "y": 0.8 * self.screen_height,
+                "y": 0.8 * self.screen_height + 20,
                 "anchor": CENTER,
             },
             "media_artist": {
                 "x": 0.5 * self.screen_width,
-                "y": 0.9 * self.screen_height,
+                "y": 0.9 * self.screen_height + 20,
                 "anchor": CENTER,
             },
         }
@@ -423,7 +423,7 @@ class CrtTv:
         Returns:
             int: the height of the CRT's screen
         """
-        return self._root.winfo_screenheight()
+        return int(self._root.winfo_screenheight() * 0.9)
 
     @property
     def title(self) -> str:
