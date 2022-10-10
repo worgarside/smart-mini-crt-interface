@@ -4,6 +4,8 @@ Module for holding the main controller function(s) for controlling the GUI
 from json import dumps, loads
 from logging import DEBUG, getLogger
 from os import getenv
+from pathlib import Path
+from sys import path
 from typing import Any
 
 from dotenv import load_dotenv
@@ -11,15 +13,18 @@ from paho.mqtt.client import Client, MQTTMessage
 from wg_utilities.exceptions import on_exception
 from wg_utilities.loggers import add_file_handler, add_stream_handler
 
-from artwork_image import ArtworkImage
-from const import (
+path.append(str(Path(__file__).parents[2]))
+
+# pylint: disable=wrong-import-position
+from domain.model.artwork_image import ArtworkImage
+from domain.model.const import (
     CRT_DISPLAY_MQTT_TOPIC,
     CRT_PIN,
     HA_CRT_PI_STATE_FROM_HA_TOPIC,
     LOG_DIR,
     TODAY_STR,
 )
-from crt_tv import CrtTv
+from domain.model.crt_tv import CrtTv
 
 load_dotenv()
 

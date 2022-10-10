@@ -16,8 +16,8 @@ from paho.mqtt.publish import single
 from wg_utilities.exceptions import on_exception
 from wg_utilities.loggers import add_file_handler, add_stream_handler
 
-from artwork_image import ArtworkImage
-from const import (
+from domain.model.artwork_image import ArtworkImage
+from domain.model.const import (
     FORCE_HA_UPDATE_TOPIC,
     HA_CRT_PI_STATE_FROM_CRT_TOPIC,
     LOG_DIR,
@@ -318,7 +318,7 @@ class CrtTv:
         *,
         title: str | None = _DEFAULT,  # type: ignore[assignment]
         artist: str | None = _DEFAULT,  # type: ignore[assignment]
-        artwork_image: ArtworkImage | None = _DEFAULT,  # type: ignore[assignment]
+        artwork_image: ArtworkImage | None = _DEFAULT,
     ) -> None:
         """Update the display with the new media information. An object instance is used
          as a default so that the values can be removed by setting them to `None`

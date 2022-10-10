@@ -13,7 +13,7 @@ from PIL.Image import open as open_image
 from requests import get
 from wg_utilities.loggers import add_file_handler, add_stream_handler
 
-from const import LOG_DIR, TODAY_STR
+from domain.model.const import LOG_DIR, TODAY_STR
 
 LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)

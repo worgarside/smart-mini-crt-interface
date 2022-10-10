@@ -8,7 +8,7 @@ User=pi
 Group=pi
 Environment="DISPLAY=:0.0"
 Environment="XAUTHORITY=/home/pi/.Xauthority"
-ExecStart=/home/pi/.pyenv/shims/python /home/pi/smart-mini-crt-interface/src/gui.py
+ExecStart=/home/pi/.local/share/virtualenvs/smart-mini-crt-interface-cUI21FE0/bin/python /home/pi/smart-mini-crt-interface/src/gui.py
 Restart=on-failure
 RestartSec=10s
 
