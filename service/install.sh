@@ -1,10 +1,10 @@
 #!/bin/bash
 
-systemctl stop crt_api.service || :
-cp crt_api.service /etc/systemd/system/
-echo "Service file copied to /etc/systemd/system/crt_api.service"
-systemctl reenable crt_api.service
-systemctl start crt_api.service
+systemctl stop internal_conditions_reporter.service || :
+cp internal_conditions_reporter.service /etc/systemd/system/
+echo "Service file copied to /etc/systemd/system/internal_conditions_reporter.service"
+systemctl reenable internal_conditions_reporter.service
+systemctl start internal_conditions_reporter.service
 
 systemctl stop crt_gui.service || :
 cp crt_gui.service /etc/systemd/system/

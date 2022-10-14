@@ -3,27 +3,25 @@ Module for holding the main controller function(s) for controlling the GUI
 """
 from json import dumps, loads
 from logging import DEBUG, getLogger
-from os import getenv
 from pathlib import Path
 from sys import path
 from typing import Any
 
 from dotenv import load_dotenv
-from paho.mqtt.client import Client, MQTTMessage
+from paho.mqtt.client import MQTTMessage
 from wg_utilities.exceptions import on_exception
-from wg_utilities.loggers import add_file_handler, add_stream_handler
+from wg_utilities.loggers import add_stream_handler
 
 path.append(str(Path(__file__).parents[2]))
 
 # pylint: disable=wrong-import-position
-from domain.model.artwork_image import ArtworkImage
-from domain.model.const import (
+from application.handler.mqtt import (
     CRT_DISPLAY_MQTT_TOPIC,
-    CRT_PIN,
     HA_CRT_PI_STATE_FROM_HA_TOPIC,
-    LOG_DIR,
-    TODAY_STR,
+    MQTT_CLIENT,
 )
+from domain.model.artwork_image import ArtworkImage
+from domain.model.const import CRT_PIN
 from domain.model.crt_tv import CrtTv
 
 load_dotenv()
@@ -31,16 +29,8 @@ load_dotenv()
 LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
 add_stream_handler(LOGGER)
-add_file_handler(LOGGER, logfile_path=f"{LOG_DIR}/crt_interface/{TODAY_STR}.log")
-
 
 CRT = CrtTv(CRT_PIN)
-MQTT_CLIENT = Client()
-MQTT_CLIENT.username_pw_set(
-    username=getenv("MQTT_USERNAME"), password=getenv("MQTT_PASSWORD")
-)
-
-MQTT_HOST = getenv("MQTT_HOST")
 
 
 @on_exception()  # type: ignore[misc]
@@ -100,47 +90,13 @@ def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
 
 
 @on_exception()  # type: ignore[misc]
-def on_connect(
-    client: Client, userdata: dict[str, object], flags: dict[str, object], rc: int
-) -> None:
-    """Called when the broker responds to our connection request.
-
-    Args:
-        client (Client): the client instance for this callback
-        userdata (dict): the private user data as set in Client() or userdata_set()
-        flags (dict): response flags sent by the broker
-        rc (int): the connection result
-    """
-    _ = client, userdata, flags, rc
-    LOGGER.debug("MQTT Client connected")
-
-
-@on_exception()  # type: ignore[misc]
-def on_disconnect(client: Client, userdata: dict[str, object], rc: int) -> None:
-    """Called when the client disconnects from the broker
-
-    Args:
-        client (Client): the client instance for this callback
-        userdata (dict): the private user data as set in Client() or userdata_set()
-        rc (int): the connection result
-    """
-    _ = client, userdata, rc
-
-    LOGGER.debug("MQTT Client disconnected")
-    MQTT_CLIENT.connect(MQTT_HOST)
-
-
-@on_exception()  # type: ignore[misc]
 def main() -> None:
     """Main function for this script"""
 
     LOGGER.info("Starting CRT Interface (%ix%i)", CRT.screen_width, CRT.screen_height)
 
-    MQTT_CLIENT.on_connect = on_connect
-    MQTT_CLIENT.on_disconnect = on_disconnect
     MQTT_CLIENT.on_message = on_message
 
-    MQTT_CLIENT.connect(MQTT_HOST)
     MQTT_CLIENT.subscribe(CRT_DISPLAY_MQTT_TOPIC)
     MQTT_CLIENT.subscribe(HA_CRT_PI_STATE_FROM_HA_TOPIC)
     MQTT_CLIENT.loop_start()

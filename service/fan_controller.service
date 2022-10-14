@@ -9,7 +9,7 @@ Type=simple
 Restart=always
 RestartSec=5
 User=pi
-ExecStart=/home/pi/.local/share/virtualenvs/smart-mini-crt-interface-cUI21FE0/bin/python /home/pi/smart-mini-crt-interface/src/fan_controller.py
+ExecStart=/home/pi/.local/share/virtualenvs/smart-mini-crt-interface-cUI21FE0/bin/python /home/pi/smart-mini-crt-interface/src/application/controller/fan_controller.py
 
 [Install]
 WantedBy=multi-user.target

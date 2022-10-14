@@ -1,25 +1,27 @@
 """Simple script to control the CRT fan via MQTT"""
 from logging import DEBUG, getLogger
-from os import getenv
+from pathlib import Path
+from sys import path
 from typing import Any
 
 from dotenv import load_dotenv
 from paho.mqtt.client import MQTTMessage
 from paho.mqtt.subscribe import callback
 from wg_utilities.exceptions import on_exception
-from wg_utilities.loggers import add_file_handler, add_stream_handler
+from wg_utilities.loggers import add_stream_handler
 
-from domain.model.const import FAN_MQTT_TOPIC, FAN_PIN, LOG_DIR, PI, TODAY_STR
+path.append(str(Path(__file__).parents[2]))
+# pylint: disable=wrong-import-position
+from application.handler.mqtt import (
+    FAN_MQTT_TOPIC,
+    MQTT_HOST,
+    MQTT_PASSWORD,
+    MQTT_USERNAME,
+)
+from domain.model.const import FAN_PIN, PI
 
 load_dotenv()
 
-MQTT_AUTH_KWARGS = {
-    "hostname": getenv("MQTT_HOST"),
-    "auth": {
-        "username": getenv("MQTT_USERNAME"),
-        "password": getenv("MQTT_PASSWORD"),
-    },
-}
 
 ON_VALUES = (True, 1, "1", "on", "true", "True")
 OFF_VALUES = (False, 0, "0", "off", "false", "False")
@@ -27,7 +29,6 @@ OFF_VALUES = (False, 0, "0", "off", "false", "False")
 LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
 add_stream_handler(LOGGER)
-add_file_handler(LOGGER, logfile_path=f"{LOG_DIR}/fan_controller/{TODAY_STR}.log")
 
 # noinspection PyIncorrectDocstring
 @on_exception()  # type: ignore[misc]
@@ -47,7 +48,15 @@ def setup_callback() -> None:
     """Function to create callback for MQTT receives, only in a function to allow
     decoration"""
     LOGGER.info("Creating callback function")
-    callback(on_message, FAN_MQTT_TOPIC, **MQTT_AUTH_KWARGS)
+    callback(
+        on_message,
+        FAN_MQTT_TOPIC,
+        hostname=MQTT_HOST,
+        auth={
+            "username": MQTT_USERNAME,
+            "password": MQTT_PASSWORD,
+        },
+    )
 
 
 if __name__ == "__main__":

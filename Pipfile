@@ -10,7 +10,7 @@ pre-commit = "*"
 
 [packages]
 python-dotenv = "*"
-pigpio = {version = "*",sys_platform = "!= 'darwin'"}
+pigpio = "*"
 pychromecast = "*"
 pillow = "*"
 requests = "*"
@@ -19,6 +19,3 @@ flask = "*"
 python-kasa = "==0.5.0"
 wg-utilities = "*"
 paho-mqtt = "*"
-
-[requires]
-python_version = "3.8"

@@ -14,23 +14,16 @@ from typing import Any, Literal, TypedDict
 from dotenv import load_dotenv
 from paho.mqtt.publish import single
 from wg_utilities.exceptions import on_exception
-from wg_utilities.loggers import add_file_handler, add_stream_handler
+from wg_utilities.loggers import add_stream_handler
 
 from domain.model.artwork_image import ArtworkImage
-from domain.model.const import (
-    FORCE_HA_UPDATE_TOPIC,
-    HA_CRT_PI_STATE_FROM_CRT_TOPIC,
-    LOG_DIR,
-    PI,
-    TODAY_STR,
-)
+from domain.model.const import FORCE_HA_UPDATE_TOPIC, HA_CRT_PI_STATE_FROM_CRT_TOPIC, PI
 
 load_dotenv()
 
 LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
 add_stream_handler(LOGGER)
-add_file_handler(LOGGER, logfile_path=f"{LOG_DIR}/crt_interface/{TODAY_STR}.log")
 
 try:
     # pylint: disable=unused-import

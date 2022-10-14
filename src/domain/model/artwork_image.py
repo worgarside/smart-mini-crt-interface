@@ -11,14 +11,11 @@ from re import compile as compile_regex
 from PIL.Image import Image, Resampling
 from PIL.Image import open as open_image
 from requests import get
-from wg_utilities.loggers import add_file_handler, add_stream_handler
-
-from domain.model.const import LOG_DIR, TODAY_STR
+from wg_utilities.loggers import add_stream_handler
 
 LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
 add_stream_handler(LOGGER)
-add_file_handler(LOGGER, logfile_path=f"{LOG_DIR}/crt_interface/{TODAY_STR}.log")
 
 
 class ArtworkImage:
