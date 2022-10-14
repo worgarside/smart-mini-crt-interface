@@ -16,8 +16,12 @@ from paho.mqtt.publish import single
 from wg_utilities.exceptions import on_exception
 from wg_utilities.loggers import add_stream_handler
 
+from application.handler.mqtt import (
+    FORCE_HA_UPDATE_TOPIC,
+    HA_CRT_PI_STATE_FROM_CRT_TOPIC,
+)
 from domain.model.artwork_image import ArtworkImage
-from domain.model.const import FORCE_HA_UPDATE_TOPIC, HA_CRT_PI_STATE_FROM_CRT_TOPIC, PI
+from domain.model.const import PI
 
 load_dotenv()
 
