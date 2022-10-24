@@ -29,7 +29,7 @@
                 "sha256:2163e1640ddb52b7a8c80d0a67a08587e5d245cc9c553a74a847056bc2976b15",
                 "sha256:8ca1e4fcf50d07413d66d1a5e416e42cfdf5851c981d679a09851a6853383b3c"
             ],
-            "markers": "python_version >= '3.6'",
+            "markers": "python_full_version >= '3.6.0'",
             "version": "==4.0.2"
         },
         "asyncclick": {
@@ -52,7 +52,7 @@
                 "sha256:0d9c601124e5a6ba9712dbc60d9c53c21e34f5f641fe83002317394311bdce14",
                 "sha256:90c1a32f1d68f940488354e36370f6cca89f0f106db09518524c88d6ed83f382"
             ],
-            "markers": "python_version >= '3.6'",
+            "markers": "python_full_version >= '3.6.0'",
             "version": "==2022.9.24"
         },
         "charset-normalizer": {
@@ -60,7 +60,7 @@
                 "sha256:5a3d016c7c547f69d6f81fb0db9449ce888b418b5b9952cc5e6e66843e9dd845",
                 "sha256:83e9a75d1911279afd89352c68b45348559d1fc0506b054b346651b5e7fee29f"
             ],
-            "markers": "python_version >= '3.6'",
+            "markers": "python_full_version >= '3.6.0'",
             "version": "==2.1.1"
         },
         "click": {
@@ -390,11 +390,11 @@
         },
         "wg-utilities": {
             "hashes": [
-                "sha256:3c9151801196ba09c55e38e30f18517db6cd52fb361d2bc81526b049ca99e682",
-                "sha256:cb6dd0c26f8b5cb8b65d7fb7c3f69f21a99c65cc60dea73fefe26d649563b064"
+                "sha256:5c5a78b6484a86acedeecb87753c9e47beb8dd970f1dd2ce6b5b4b78e2e8c480",
+                "sha256:6898b9081f81a38b5a64a1c7476386c776b0cf468e7ead303028e147c705408c"
             ],
             "index": "pypi",
-            "version": "==2.32.0"
+            "version": "==2.33.0"
         },
         "zeroconf": {
             "hashes": [
