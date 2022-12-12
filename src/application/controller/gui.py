@@ -1,6 +1,8 @@
 """
 Module for holding the main controller function(s) for controlling the GUI
 """
+from __future__ import annotations
+
 from json import dumps, loads
 from logging import DEBUG, getLogger
 from pathlib import Path
