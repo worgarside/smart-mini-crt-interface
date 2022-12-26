@@ -1,6 +1,8 @@
 """Script to periodically take readings from the DHT22 sensor inside the CRT TV and
 report them to Home Assistant
 """
+from __future__ import annotations
+
 from json import dumps
 from logging import DEBUG, getLogger
 from pathlib import Path
