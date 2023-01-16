@@ -1,4 +1,6 @@
 """Simple script to control the CRT fan via MQTT"""
+from __future__ import annotations
+
 from logging import DEBUG, getLogger
 from pathlib import Path
 from sys import path
