@@ -134,6 +134,9 @@ repos:
       - id: codespell
         additional_dependencies:
           - tomli
+        args:
+          - --skip
+          - '*.svg,*.json'
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.0.261
