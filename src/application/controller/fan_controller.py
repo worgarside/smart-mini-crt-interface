@@ -1,4 +1,6 @@
 """Simple script to control the CRT fan via MQTT"""
+from __future__ import annotations
+
 from logging import DEBUG, getLogger
 from pathlib import Path
 from sys import path
@@ -29,6 +31,7 @@ OFF_VALUES = (False, 0, "0", "off", "false", "False")
 LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
 add_stream_handler(LOGGER)
+
 
 # noinspection PyIncorrectDocstring
 @on_exception()  # type: ignore[misc]
