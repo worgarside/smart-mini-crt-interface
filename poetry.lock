@@ -967,6 +967,18 @@ pydantic = ">=1,<2"
 docs = ["m2r (>=0,<1)", "mistune (<2.0.0)", "sphinx (>=4,<5)", "sphinx_rtd_theme (>=0,<1)", "sphinxcontrib-programoutput (>=0,<1)"]
 
 [[package]]
+name = "pytz"
+version = "2023.3"
+description = "World timezone definitions, modern and historical"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pytz-2023.3-py2.py3-none-any.whl", hash = "sha256:a151b3abb88eda1d4e34a9814df37de2a80e301e68ba0fd856fb9b46bfbbbffb"},
+    {file = "pytz-2023.3.tar.gz", hash = "sha256:1d8ce29db189191fb55338ee6d0387d82ab59f3d00eac103412d64e0ebd0c588"},
+]
+
+[[package]]
 name = "pyyaml"
 version = "6.0"
 description = "YAML parser and emitter for Python"
@@ -1198,6 +1210,7 @@ files = [
 [package.dependencies]
 botocore = "*"
 "jetson.gpio" = {version = "*", markers = "sys_platform == \"linux\""}
+pigpio = {version = "*", optional = true, markers = "extra == \"devices-dht22\""}
 
 [package.extras]
 clients = ["flask (>=2.0.2)", "pydantic", "pyjwt (>=2.6.0,<2.7.0)", "python-dotenv", "pytz (>=2022.1)", "requests (>=2.26.0)", "strenum", "tzlocal"]
@@ -1374,4 +1387,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "ba9aa7fe3382ecc882aefacc33e0c42bf72c6681ca8b4988839848147a8d92d3"
+content-hash = "45fb0c5b749d5a068be443f3819b0903ec9d2bc4165696642380a9e4b37b62ea"
