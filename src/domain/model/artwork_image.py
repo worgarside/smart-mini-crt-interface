@@ -1,4 +1,4 @@
-"""Class for the creation, caching, and management of artwork images"""
+"""Class for the creation, caching, and management of artwork images."""
 from __future__ import annotations
 
 from io import BytesIO
@@ -19,7 +19,7 @@ add_stream_handler(LOGGER)
 
 
 class ArtworkImage:
-    """Class for the creation, caching, and management of artwork images"""
+    """Class for the creation, caching, and management of artwork images."""
 
     ARTWORK_DIR = Path.home() / "crt_artwork"
     ALPHANUM_PATTERN = compile_regex(r"[\W_]+")
@@ -33,7 +33,7 @@ class ArtworkImage:
         self.url = url
 
     def download(self) -> None:
-        """Download the image from the URL to store it locally for future use"""
+        """Download the image from the URL to store it locally for future use."""
 
         if not isdir(self.ARTWORK_DIR / self.artist_directory):
             mkdir(self.ARTWORK_DIR / self.artist_directory)
@@ -52,7 +52,7 @@ class ArtworkImage:
         LOGGER.info("New image saved at %s", self.file_path)
 
     def get_image(self, size: int | None = None) -> Image:
-        """Returns the image as a PIL Image object, with optional resizing
+        """Returns the image as a PIL Image object, with optional resizing.
 
         Args:
             size (int): integer value to use as height and width of artwork, in pixels
@@ -76,8 +76,7 @@ class ArtworkImage:
 
     @property
     def artist_directory(self) -> str:
-        """Strips all non-alphanumeric characters from the artist name for use as the
-        directory name
+        """Format the artist name for use as directory name.
 
         Returns:
             str: the artist name, with all non-alphanumeric characters removed
@@ -86,8 +85,7 @@ class ArtworkImage:
 
     @property
     def filename(self) -> str:
-        """Strip all non-alphanumeric characters from the album name for use as the
-        file name
+        """Format the album name for use as the file name.
 
         Returns:
             str: the filename of the artwork image
@@ -96,16 +94,17 @@ class ArtworkImage:
 
     @property
     def file_path(self) -> str:
-        """
+        """Returns the fully-qualified path to the artwork image.
+
         Returns:
-            str: fully-qualified path to the artwork image
+            str: artwork image path
         """
         return join(self.ARTWORK_DIR, self.artist_directory, self.filename)
 
     def __str__(self) -> str:
-        """Returns the string representation of the object"""
+        """Return the string representation of the object."""
         return self.__repr__()
 
     def __repr__(self) -> str:
-        """Returns the string representation of the object"""
+        """Return the string representation of the object."""
         return f"ArtworkImage({self.artist}, {self.album}, {self.url})"

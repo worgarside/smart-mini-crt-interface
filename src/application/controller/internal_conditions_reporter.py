@@ -1,6 +1,6 @@
-"""Script to periodically take readings from the DHT22 sensor inside the CRT TV and
-report them to Home Assistant
-"""
+"""Periodically report readings from the DHT22 sensor to Home Assistant."""
+from __future__ import annotations
+
 from json import dumps
 from logging import DEBUG, getLogger
 from pathlib import Path
@@ -16,7 +16,11 @@ from wg_utilities.loggers import add_stream_handler
 path.append(str(Path(__file__).parents[2]))
 
 # pylint: disable=wrong-import-position
-from application.handler.mqtt import MQTT_HOST, MQTT_PASSWORD, MQTT_USERNAME
+from application.handler.mqtt import (  # noqa: E402
+    MQTT_HOST,
+    MQTT_PASSWORD,
+    MQTT_USERNAME,
+)
 
 LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
@@ -29,7 +33,7 @@ LOOP_DELAY_SECONDS = 30
 
 @on_exception()  # type: ignore[misc]
 def main() -> None:
-    """Takes temp/humidity readings, writes them to the LCD, uploads them to HA"""
+    """Take temp/humidity readings, write them to the LCD, upload them to HA."""
 
     dht22 = DHT22Sensor(pi(), DHT22_PIN)
 

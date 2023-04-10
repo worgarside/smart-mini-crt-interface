@@ -1,6 +1,4 @@
-"""
-This module contains the class for controlling the CRT TV GUI
-"""
+"""This module contains the class for controlling the CRT TV GUI."""
 from __future__ import annotations
 
 from html import unescape
@@ -45,11 +43,11 @@ except ImportError as exc:
     from unittest.mock import MagicMock
 
     class TkMagicMock(MagicMock):
-        """MagicMock specifically for Tk class"""
+        """MagicMock specifically for Tk class."""
 
         @staticmethod
         def mainloop(*_: Any, **__: Any) -> None:
-            """Substitute for TK.mainloop for non-Tk configurations"""
+            """Substitute for TK.mainloop for non-Tk configurations."""
             while True:
                 print("loop")
                 sleep(1)
@@ -88,7 +86,7 @@ MQTT_AUTH_KWARGS = {
 
 
 class StandardArgsInfo(TypedDict):
-    """Typing for the standard Label/Canvas args"""
+    """Typing for the standard Label/Canvas args."""
 
     highlightthickness: Literal[0]
     bd: Literal[0]
@@ -96,7 +94,7 @@ class StandardArgsInfo(TypedDict):
 
 
 class CoordsItemInfo(TypedDict):
-    """Typing for the individual coords objects"""
+    """Typing for the individual coords objects."""
 
     x: float
     y: float
@@ -104,7 +102,7 @@ class CoordsItemInfo(TypedDict):
 
 
 class CoordsInfo(TypedDict):
-    """Typing for the CrtTv.coords attribute"""
+    """Typing for the CrtTv.coords attribute."""
 
     artwork: CoordsItemInfo
     media_title: CoordsItemInfo
@@ -112,7 +110,7 @@ class CoordsInfo(TypedDict):
 
 
 class WidgetsInfo(TypedDict):
-    """Typing for the `CrtTv.widgets` attribute"""
+    """Typing for the `CrtTv.widgets` attribute."""
 
     canvas: Canvas
     artwork: Label
@@ -121,7 +119,7 @@ class WidgetsInfo(TypedDict):
 
 
 class CrtTv:
-    """CRT TV class for controlling the GUI (not the power state)"""
+    """CRT TV class for controlling the GUI (not the power state)."""
 
     BG_COLOR = "#000000"
     STANDARD_ARGS: StandardArgsInfo = {"highlightthickness": 0, "bd": 0, "bg": BG_COLOR}
@@ -209,8 +207,9 @@ class CrtTv:
 
     @on_exception()  # type: ignore[misc]
     def hscroll_label(self, k: Literal["media_artist", "media_title"]) -> None:
-        """Horizontally scroll a label on the GUI. Used when the text content is wider
-        than the available screen space
+        """Horizontally scroll a label on the GUI.
+
+        Used when the text content is wider than the available screen space.
 
         Args:
             k (str): the key to use in finding the label to scroll
@@ -237,7 +236,7 @@ class CrtTv:
     def refresh_display_output(
         self,
     ) -> None:
-        """Refresh the display to display current property values"""
+        """Refresh the display to display current property values."""
 
         LOGGER.debug(
             "Updating display with title `%s`, artist `%s`, artwork `%s`",
@@ -265,12 +264,12 @@ class CrtTv:
                 self.hscroll_label(k)
 
     def start_gui(self) -> None:
-        """Start the Tk mainloop, this blocks until the GUI is closed"""
+        """Start the Tk mainloop, this blocks until the GUI is closed."""
         # TODO make this optionally async so other things can run in the background?
         self._root.mainloop()
 
     def switch_on(self, *, notify_ha: bool = False) -> None:
-        """Switch on the CRT TV
+        """Switch on the CRT TV.
 
         Args:
             notify_ha (bool): Whether to notify Home Assistant of the state change.
@@ -282,7 +281,7 @@ class CrtTv:
             single(HA_CRT_PI_STATE_FROM_CRT_TOPIC, payload=True, **MQTT_AUTH_KWARGS)
 
     def switch_off(self, *, notify_ha: bool = False) -> None:
-        """Switch off the CRT TV
+        """Switch off the CRT TV.
 
         Args:
             notify_ha (bool): Whether to notify Home Assistant of the state change.
@@ -293,7 +292,7 @@ class CrtTv:
             single(HA_CRT_PI_STATE_FROM_CRT_TOPIC, payload=False, **MQTT_AUTH_KWARGS)
 
     def toggle_state(self, *, notify_ha: bool = False) -> None:
-        """Toggle the power state of the CRT TV
+        """Toggle the power state of the CRT TV.
 
         Args:
             notify_ha (bool): Whether to notify Home Assistant of the state change.
@@ -317,8 +316,10 @@ class CrtTv:
         artist: str | None = _DEFAULT,  # type: ignore[assignment]
         artwork_image: ArtworkImage | None = _DEFAULT,
     ) -> None:
-        """Update the display with the new media information. An object instance is used
-         as a default so that the values can be removed by setting them to `None`
+        """Update the display with the new media information.
+
+        An object instance is used as a default so that the values can be removed
+        by setting them to `None`.
 
         Args:
             title (str): the song title
@@ -339,7 +340,7 @@ class CrtTv:
 
     @property
     def album(self) -> str:
-        """The album name"""
+        """The album name."""
         if not hasattr(self, "_album"):
             # noinspection PyAttributeOutsideInit
             self._album = ""
@@ -348,14 +349,14 @@ class CrtTv:
 
     @album.setter
     def album(self, value: str | None) -> None:
-        """Set the album name"""
+        """Set the album name."""
         # noinspection PyAttributeOutsideInit
         self._album = value or ""
         self.refresh_display_output()
 
     @property
     def artist(self) -> str:
-        """The artist property"""
+        """The artist property."""
         if not hasattr(self, "_artist"):
             # noinspection PyAttributeOutsideInit
             self._artist = ""
@@ -364,25 +365,26 @@ class CrtTv:
 
     @artist.setter
     def artist(self, value: str | None) -> None:
-        """The artist property setter"""
+        """The artist property setter."""
         # noinspection PyAttributeOutsideInit
         self._artist = value or ""
         self.refresh_display_output()
 
     @property
     def artwork_image(self) -> ArtworkImage:
-        """The artwork image"""
+        """The artwork image."""
         return self._artwork_image
 
     @artwork_image.setter
     def artwork_image(self, value: ArtworkImage | None) -> None:
-        """The artwork image"""
+        """The artwork image."""
         self._artwork_image = value or self.NULL_IMAGE
         self.refresh_display_output()
 
     @property
     def artwork_size(self) -> int:
-        """
+        """Calculate the size of the artwork image.
+
         Returns:
             int: the size of the artwork image on the screen in pixels
         """
@@ -390,7 +392,8 @@ class CrtTv:
 
     @property
     def current_state_log_output(self) -> str:
-        """
+        """Generate a useful output for lgos.
+
         Returns:
             str: a useful output of the current state of the CRT for logging
         """
@@ -408,7 +411,8 @@ class CrtTv:
 
     @property
     def screen_width(self) -> int:
-        """
+        """Get the width of the CRT's screen.
+
         Returns:
             int: the width of the CRT's screen
         """
@@ -416,7 +420,8 @@ class CrtTv:
 
     @property
     def screen_height(self) -> int:
-        """
+        """Get the height of the CRT's screen.
+
         Returns:
             int: the height of the CRT's screen
         """
@@ -424,7 +429,7 @@ class CrtTv:
 
     @property
     def title(self) -> str:
-        """The title property"""
+        """The title property."""
         if not hasattr(self, "_title"):
             # noinspection PyAttributeOutsideInit
             self._title = ""
@@ -433,14 +438,15 @@ class CrtTv:
 
     @title.setter
     def title(self, value: str | None) -> None:
-        """The title property setter"""
+        """Set the title value."""
         # noinspection PyAttributeOutsideInit
         self._title = value or ""
         self.refresh_display_output()
 
     @property
     def power_state(self) -> bool:
-        """
+        """Get the power state of the CRT.
+
         Returns:
             bool: the power state of the CRT (GPIO pin)
         """

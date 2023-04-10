@@ -1,4 +1,6 @@
-"""Simple script to control the CRT fan via MQTT"""
+"""Simple script to control the CRT fan via MQTT."""
+from __future__ import annotations
+
 from logging import DEBUG, getLogger
 from pathlib import Path
 from sys import path
@@ -12,13 +14,13 @@ from wg_utilities.loggers import add_stream_handler
 
 path.append(str(Path(__file__).parents[2]))
 # pylint: disable=wrong-import-position
-from application.handler.mqtt import (
+from application.handler.mqtt import (  # noqa: E402
     FAN_MQTT_TOPIC,
     MQTT_HOST,
     MQTT_PASSWORD,
     MQTT_USERNAME,
 )
-from domain.model.const import FAN_PIN, PI
+from domain.model.const import FAN_PIN, PI  # noqa: E402
 
 load_dotenv()
 
@@ -30,10 +32,11 @@ LOGGER = getLogger(__name__)
 LOGGER.setLevel(DEBUG)
 add_stream_handler(LOGGER)
 
+
 # noinspection PyIncorrectDocstring
 @on_exception()  # type: ignore[misc]
 def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
-    """Callback method for updating env vars on MQTT message
+    """Process env vars on MQTT message.
 
     Args:
         message (MQTTMessage): the message object from the MQTT subscription
@@ -45,8 +48,10 @@ def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
 
 @on_exception()  # type: ignore[misc]
 def setup_callback() -> None:
-    """Function to create callback for MQTT receives, only in a function to allow
-    decoration"""
+    """Create callback for MQTT receives.
+
+    This is only in a function to allow decoration.
+    """
     LOGGER.info("Creating callback function")
     callback(
         on_message,
