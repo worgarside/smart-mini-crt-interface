@@ -1,6 +1,4 @@
-"""
-Module for holding the main controller function(s) for controlling the GUI
-"""
+"""Main controller function(s) for controlling the GUI."""
 from __future__ import annotations
 
 from logging import DEBUG, getLogger
@@ -53,7 +51,7 @@ def on_connect(
 
 @on_exception()  # type: ignore[misc]
 def on_disconnect(client: Client, userdata: dict[str, object], rc: int) -> None:
-    """Called when the client disconnects from the broker
+    """Called when the client disconnects from the broker.
 
     Args:
         client (Client): the client instance for this callback

@@ -1,6 +1,6 @@
-"""
-Module for holding the main controller function(s) for controlling the GUI
-"""
+"""Module for holding the main controller function(s) for controlling the GUI."""
+from __future__ import annotations
+
 from json import dumps, loads
 from logging import DEBUG, getLogger
 from pathlib import Path
@@ -15,14 +15,14 @@ from wg_utilities.loggers import add_stream_handler
 path.append(str(Path(__file__).parents[2]))
 
 # pylint: disable=wrong-import-position
-from application.handler.mqtt import (
+from application.handler.mqtt import (  # noqa: E402
     CRT_DISPLAY_MQTT_TOPIC,
     HA_CRT_PI_STATE_FROM_HA_TOPIC,
     MQTT_CLIENT,
 )
-from domain.model.artwork_image import ArtworkImage
-from domain.model.const import CRT_PIN
-from domain.model.crt_tv import CrtTv
+from domain.model.artwork_image import ArtworkImage  # noqa: E402
+from domain.model.const import CRT_PIN  # noqa: E402
+from domain.model.crt_tv import CrtTv  # noqa: E402
 
 load_dotenv()
 
@@ -35,7 +35,7 @@ CRT = CrtTv(CRT_PIN)
 
 @on_exception()  # type: ignore[misc]
 def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
-    """Callback method for updating env vars on MQTT message
+    """Process env vars on MQTT message.
 
     Args:
         message (MQTTMessage): the message object from the MQTT subscription
@@ -91,7 +91,7 @@ def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
 
 @on_exception()  # type: ignore[misc]
 def main() -> None:
-    """Main function for this script"""
+    """Main function for this script."""
 
     LOGGER.info("Starting CRT Interface (%ix%i)", CRT.screen_width, CRT.screen_height)
 

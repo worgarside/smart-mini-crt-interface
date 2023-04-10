@@ -54,14 +54,6 @@ no_gitignore = false
 line-length = 120
 extend-select = [
     # https://github.com/charliermarsh/ruff#supported-rules
-    "M001", # UnusedNOQA
-    "U001", # UselessMetaclassType
-    "U002", # UnnecessaryAbspath
-    "U003", # TypeOfPrimitive
-    "U004", # UselessObjectInheritance
-    "U005", # DeprecatedUnittestAlias
-    "U006", # UsePEP585Annotation
-    "U008", # SuperCallWithParameters
     "B011", # DoNotAssertFalse
     "B014", # DuplicateHandlerException
     "B025", # DuplicateTryBlockException
@@ -106,4 +98,37 @@ extend-select = [
     "N813", # CamelcaseImportedAsLowercase
     "N814", # CamelcaseImportedAsConstant
     "N817", # CamelcaseImportedAsAcronym
+]
+
+[tool.poetry]
+name = "smart-mini-crt-interface"
+version = "0.1.0"
+description = ""
+authors = ["Will Garside <worgarside@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+python-dotenv = "*"
+pigpio = "*"
+pychromecast = "*"
+pillow = "*"
+requests = "*"
+tk = "*"
+flask = "*"
+python-kasa = "==0.5.0"
+wg-utilities = "*"
+paho-mqtt = "*"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "*"
+pylint = "*"
+pre-commit = "*"
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = [
+  "poetry-core",
 ]
