@@ -33,7 +33,7 @@ disallow_untyped_defs = true
 enable_recursive_aliases = true
 
 [tool.codespell]
-skip = '*.json,*.csv,*.xml'
+skip = '*.json,*.csv,*.xml,*.svg,*.lock'
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
