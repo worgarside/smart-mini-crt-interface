@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from logging import DEBUG, getLogger
-from os import getenv
+from os import environ, getenv
 from random import uniform
 from sys import exit as sys_exit
 from time import sleep
@@ -20,8 +20,8 @@ add_stream_handler(LOGGER)
 
 
 MQTT_CLIENT = Client()
-MQTT_USERNAME = getenv("MQTT_USERNAME")
-MQTT_PASSWORD = getenv("MQTT_PASSWORD")
+MQTT_USERNAME = environ["MQTT_USERNAME"]
+MQTT_PASSWORD = environ["MQTT_PASSWORD"]
 MQTT_CLIENT.username_pw_set(username=MQTT_USERNAME, password=MQTT_PASSWORD)
 MQTT_HOST = getenv("MQTT_HOST", "homeassistant.local")
 
@@ -33,7 +33,7 @@ HA_CRT_PI_STATE_FROM_CRT_TOPIC = "/home-assistant/crt-pi/state-from-crt"
 HA_CRT_PI_STATE_FROM_HA_TOPIC = "/home-assistant/crt-pi/state-from-ha"
 
 
-@on_exception()  # type: ignore[misc]
+@on_exception()
 def on_connect(
     client: Client, userdata: dict[str, object], flags: dict[str, object], rc: int
 ) -> None:
@@ -49,7 +49,7 @@ def on_connect(
     LOGGER.debug("MQTT Client connected")
 
 
-@on_exception()  # type: ignore[misc]
+@on_exception()
 def on_disconnect(client: Client, userdata: dict[str, object], rc: int) -> None:
     """Called when the client disconnects from the broker.
 
