@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from html import unescape
 from logging import DEBUG, getLogger
-from os import getenv
 from pathlib import Path
 from textwrap import dedent
 from time import sleep
@@ -17,6 +16,9 @@ from wg_utilities.loggers import add_stream_handler
 from application.handler.mqtt import (
     FORCE_HA_UPDATE_TOPIC,
     HA_CRT_PI_STATE_FROM_CRT_TOPIC,
+    MQTT_HOST,
+    MQTT_PASSWORD,
+    MQTT_USERNAME,
 )
 from domain.model.artwork_image import ArtworkImage
 from domain.model.const import PI
@@ -33,8 +35,6 @@ try:
     from tkinter.font import Font
 
     from PIL import Image
-
-    # noinspection PyUnresolvedReferences
     from PIL.ImageTk import PhotoImage
 except ImportError as exc:
     LOGGER.warning(
@@ -63,7 +63,7 @@ except ImportError as exc:
 
 try:
     # pylint: disable=unused-import
-    from pigpio import OUTPUT
+    from pigpio import OUTPUT  # type: ignore[import]
     from pigpio import pi as rasp_pi
 except ImportError as exc:
     LOGGER.warning(
@@ -75,14 +75,6 @@ except ImportError as exc:
     OUTPUT = None
 
 _DEFAULT = object()
-
-MQTT_AUTH_KWARGS = {
-    "hostname": getenv("MQTT_HOST"),
-    "auth": {
-        "username": getenv("MQTT_USERNAME"),
-        "password": getenv("MQTT_PASSWORD"),
-    },
-}
 
 
 class StandardArgsInfo(TypedDict):
@@ -129,7 +121,7 @@ class CrtTv:
         "null", "null", str(Path(__file__).parent.parent / "assets" / "null.png")
     )
 
-    @on_exception()  # type: ignore[misc]
+    @on_exception()
     def __init__(self, gpio_pin: int, force_ha_update: bool = True) -> None:
         self._root = Tk()
         self._root.attributes("-fullscreen", True)
@@ -169,7 +161,6 @@ class CrtTv:
             ),
         }
 
-        # noinspection PyTypeChecker
         self.coords: CoordsInfo = {
             "artwork": {
                 "x": 0.5 * self.screen_width,
@@ -203,9 +194,17 @@ class CrtTv:
             )
 
         if force_ha_update:
-            single(FORCE_HA_UPDATE_TOPIC, payload=True, **MQTT_AUTH_KWARGS)
+            single(
+                FORCE_HA_UPDATE_TOPIC,
+                payload=True,
+                hostname=MQTT_HOST,
+                auth={
+                    "username": MQTT_USERNAME,
+                    "password": MQTT_PASSWORD,
+                },
+            )
 
-    @on_exception()  # type: ignore[misc]
+    @on_exception()
     def hscroll_label(self, k: Literal["media_artist", "media_title"]) -> None:
         """Horizontally scroll a label on the GUI.
 
@@ -232,7 +231,7 @@ class CrtTv:
             self.coords[k]["x"] = 0.5 * self.screen_width
             self.widgets[k].place(**self.coords[k])
 
-    @on_exception()  # type: ignore[misc]
+    @on_exception()
     def refresh_display_output(
         self,
     ) -> None:
@@ -245,7 +244,6 @@ class CrtTv:
             str(self.artwork_image),
         )
 
-        # noinspection PyAttributeOutsideInit
         self._artwork_photoimage = PhotoImage(
             self.artwork_image.get_image(self.artwork_size)
         )
@@ -278,7 +276,15 @@ class CrtTv:
         LOGGER.debug("Switching on CRT TV")
         PI.write(self.gpio_pin, True)
         if notify_ha:
-            single(HA_CRT_PI_STATE_FROM_CRT_TOPIC, payload=True, **MQTT_AUTH_KWARGS)
+            single(
+                HA_CRT_PI_STATE_FROM_CRT_TOPIC,
+                payload=True,
+                hostname=MQTT_HOST,
+                auth={
+                    "username": MQTT_USERNAME,
+                    "password": MQTT_PASSWORD,
+                },
+            )
 
     def switch_off(self, *, notify_ha: bool = False) -> None:
         """Switch off the CRT TV.
@@ -289,7 +295,15 @@ class CrtTv:
         LOGGER.debug("Switching off CRT TV")
         PI.write(self.gpio_pin, False)
         if notify_ha:
-            single(HA_CRT_PI_STATE_FROM_CRT_TOPIC, payload=False, **MQTT_AUTH_KWARGS)
+            single(
+                HA_CRT_PI_STATE_FROM_CRT_TOPIC,
+                payload=False,
+                hostname=MQTT_HOST,
+                auth={
+                    "username": MQTT_USERNAME,
+                    "password": MQTT_PASSWORD,
+                },
+            )
 
     def toggle_state(self, *, notify_ha: bool = False) -> None:
         """Toggle the power state of the CRT TV.
@@ -305,16 +319,21 @@ class CrtTv:
 
         if notify_ha:
             single(
-                HA_CRT_PI_STATE_FROM_CRT_TOPIC, payload=new_state, **MQTT_AUTH_KWARGS
+                HA_CRT_PI_STATE_FROM_CRT_TOPIC,
+                payload=new_state,
+                hostname=MQTT_HOST,
+                auth={
+                    "username": MQTT_USERNAME,
+                    "password": MQTT_PASSWORD,
+                },
             )
 
-    # noinspection PyAttributeOutsideInit
     def update_display_values(
         self,
         *,
         title: str | None = _DEFAULT,  # type: ignore[assignment]
         artist: str | None = _DEFAULT,  # type: ignore[assignment]
-        artwork_image: ArtworkImage | None = _DEFAULT,
+        artwork_image: ArtworkImage | None = _DEFAULT,  # type: ignore[assignment]
     ) -> None:
         """Update the display with the new media information.
 
@@ -342,7 +361,6 @@ class CrtTv:
     def album(self) -> str:
         """The album name."""
         if not hasattr(self, "_album"):
-            # noinspection PyAttributeOutsideInit
             self._album = ""
 
         return self._album
@@ -350,7 +368,6 @@ class CrtTv:
     @album.setter
     def album(self, value: str | None) -> None:
         """Set the album name."""
-        # noinspection PyAttributeOutsideInit
         self._album = value or ""
         self.refresh_display_output()
 
@@ -358,7 +375,6 @@ class CrtTv:
     def artist(self) -> str:
         """The artist property."""
         if not hasattr(self, "_artist"):
-            # noinspection PyAttributeOutsideInit
             self._artist = ""
 
         return self._artist
@@ -366,7 +382,6 @@ class CrtTv:
     @artist.setter
     def artist(self, value: str | None) -> None:
         """The artist property setter."""
-        # noinspection PyAttributeOutsideInit
         self._artist = value or ""
         self.refresh_display_output()
 
@@ -431,7 +446,6 @@ class CrtTv:
     def title(self) -> str:
         """The title property."""
         if not hasattr(self, "_title"):
-            # noinspection PyAttributeOutsideInit
             self._title = ""
 
         return self._title
@@ -439,7 +453,6 @@ class CrtTv:
     @title.setter
     def title(self, value: str | None) -> None:
         """Set the title value."""
-        # noinspection PyAttributeOutsideInit
         self._title = value or ""
         self.refresh_display_output()
 

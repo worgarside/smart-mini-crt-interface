@@ -105,6 +105,9 @@ repos:
           - pydantic
           - types-PyYAML
           - types-python-dateutil
+          - wg-utilities
+          - types-paho-mqtt
+          - python-dotenv
 
   - repo: local
     hooks:

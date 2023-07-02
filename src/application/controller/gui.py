@@ -33,7 +33,7 @@ add_stream_handler(LOGGER)
 CRT = CrtTv(CRT_PIN)
 
 
-@on_exception()  # type: ignore[misc]
+@on_exception()
 def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
     """Process env vars on MQTT message.
 
@@ -89,7 +89,7 @@ def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
         LOGGER.debug(CRT.current_state_log_output)
 
 
-@on_exception()  # type: ignore[misc]
+@on_exception()
 def main() -> None:
     """Main function for this script."""
 

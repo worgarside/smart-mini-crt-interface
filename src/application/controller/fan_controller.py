@@ -33,8 +33,7 @@ LOGGER.setLevel(DEBUG)
 add_stream_handler(LOGGER)
 
 
-# noinspection PyIncorrectDocstring
-@on_exception()  # type: ignore[misc]
+@on_exception()
 def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
     """Process env vars on MQTT message.
 
@@ -46,7 +45,7 @@ def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
     PI.write(FAN_PIN, pin_value)
 
 
-@on_exception()  # type: ignore[misc]
+@on_exception()
 def setup_callback() -> None:
     """Create callback for MQTT receives.
 
@@ -55,7 +54,7 @@ def setup_callback() -> None:
     LOGGER.info("Creating callback function")
     callback(
         on_message,
-        FAN_MQTT_TOPIC,
+        [FAN_MQTT_TOPIC],
         hostname=MQTT_HOST,
         auth={
             "username": MQTT_USERNAME,
