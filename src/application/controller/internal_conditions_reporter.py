@@ -8,7 +8,7 @@ from sys import path
 from time import sleep
 
 from paho.mqtt.publish import single
-from pigpio import pi
+from pigpio import pi  # type: ignore[import]
 from wg_utilities.devices.dht22 import DHT22Sensor
 from wg_utilities.exceptions import on_exception
 from wg_utilities.loggers import add_stream_handler
@@ -31,7 +31,7 @@ DHT22_PIN = 6
 LOOP_DELAY_SECONDS = 30
 
 
-@on_exception()  # type: ignore[misc]
+@on_exception()
 def main() -> None:
     """Take temp/humidity readings, write them to the LCD, upload them to HA."""
 
