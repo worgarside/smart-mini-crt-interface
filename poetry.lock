@@ -1152,13 +1152,13 @@ watchdog = ["watchdog (>=2.3)"]
 
 [[package]]
 name = "wg-utilities"
-version = "3.4.0"
+version = "3.7.0"
 description = "Loads of useful stuff for the things I do :)"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "wg_utilities-3.4.0-py3-none-any.whl", hash = "sha256:635700737b1f075800af47f99068e5ce68bb71737e42d7be3e24e77bdd57a8c2"},
-    {file = "wg_utilities-3.4.0.tar.gz", hash = "sha256:e49ff285c73038766523ddae092796ba05e44a6972c8f2fe60cb0a228671da2c"},
+    {file = "wg_utilities-3.7.0-py3-none-any.whl", hash = "sha256:7bd614cc12c38897d9d01bf840af39e86488fa786b94923e98b89e135147a49c"},
+    {file = "wg_utilities-3.7.0.tar.gz", hash = "sha256:61944fd2d98b3e8ed6e00b7edb8f6363ca926ae4b2b7ed2a0379ad7bd0a52ed3"},
 ]
 
 [package.dependencies]
@@ -1338,4 +1338,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "45fb0c5b749d5a068be443f3819b0903ec9d2bc4165696642380a9e4b37b62ea"
+content-hash = "3462428587d0fe03334c13c6241e7c06b36d05d37ca25977f73b5b488b68380c"
