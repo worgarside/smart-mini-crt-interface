@@ -884,17 +884,18 @@ cli = ["click (>=5.0)"]
 
 [[package]]
 name = "python-kasa"
-version = "0.5.2"
+version = "0.5.3"
 description = "Python API for TP-Link Kasa Smarthome devices"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "python_kasa-0.5.2-py3-none-any.whl", hash = "sha256:14d51bbc1cc8773d8db7c42b6a2aa718ce61ff95b138f6397a791befbc228dfa"},
-    {file = "python_kasa-0.5.2.tar.gz", hash = "sha256:7354ab7eb3e9a98dee3295cc235be40550ffb32d6f166410465a5a95e0897fd6"},
+    {file = "python_kasa-0.5.3-py3-none-any.whl", hash = "sha256:1aba4ec9bfd0824d375a8bdf3c1569e42d32ca3aecece65f1dab394d1e3dfd1d"},
+    {file = "python_kasa-0.5.3.tar.gz", hash = "sha256:373b8ea3faae6b326224b2f6e0ad4574d782881b8d645da855c181da9306a254"},
 ]
 
 [package.dependencies]
 anyio = "*"
+async-timeout = ">=3.0.0"
 asyncclick = ">=8"
 pydantic = ">=1,<2"
 
@@ -1291,4 +1292,4 @@ ifaddr = ">=0.1.7"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "3a11371c2bfcc25f6947f1c1d20961ba84f2097a825cac2efe596530efa891fe"
+content-hash = "32f84280ebd40ac99190a049a81fdd424f2c99c01cf813d4b187726e5b4b852c"
