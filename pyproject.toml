@@ -22,7 +22,7 @@ pytz = "^2023.3"
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
-pylint = "*"
+pylint = "<3.0.0"
 pre-commit = "*"
 
 [build-system]
@@ -54,7 +54,6 @@ profile = "black"
 [tool.mypy]
 exclude = ["_local_sandbox"]
 show_error_codes = true
-plugins = 'pydantic.mypy'
 follow_imports = "silent"
 warn_redundant_casts = true
 warn_unused_ignores = true
@@ -66,12 +65,6 @@ mypy_path= "src"
 
 [tool.codespell]
 skip = '*.json,*.csv,*.xml,*.svg,*.lock'
-
-[tool.pydantic-mypy]
-init_forbid_extra = true
-init_typed = true
-warn_required_dynamic_aliases = true
-warn_untyped_fields = true
 
 [tool.pycln]
 path = "*"
