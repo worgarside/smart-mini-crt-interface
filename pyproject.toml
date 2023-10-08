@@ -22,7 +22,7 @@ pytz = "^2023.3"
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
-pylint = "*"
+pylint = "<3.0.0"
 pre-commit = "*"
 
 [build-system]
