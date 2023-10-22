@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 try:
-    from pigpio import OUTPUT  # type: ignore[import]
+    from pigpio import OUTPUT  # type: ignore[import-not-found]
     from pigpio import pi as rasp_pi
 except (AttributeError, ImportError):
     from unittest.mock import MagicMock
