@@ -8,7 +8,7 @@ from sys import path
 from time import sleep
 
 from paho.mqtt.publish import single
-from pigpio import pi  # type: ignore[import]
+from pigpio import pi  # type: ignore[import-not-found]
 from wg_utilities.devices.dht22 import DHT22Sensor
 from wg_utilities.exceptions import on_exception
 from wg_utilities.loggers import add_stream_handler

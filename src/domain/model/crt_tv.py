@@ -63,7 +63,7 @@ except ImportError as exc:
 
 try:
     # pylint: disable=unused-import
-    from pigpio import OUTPUT  # type: ignore[import]
+    from pigpio import OUTPUT  # type: ignore[import-not-found]
     from pigpio import pi as rasp_pi
 except ImportError as exc:
     LOGGER.warning(
