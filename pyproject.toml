@@ -21,7 +21,6 @@ paho-mqtt = "*"
 pytz = "^2023.3"
 
 [tool.poetry.group.dev.dependencies]
-black = "*"
 pylint = "<4.0.0"
 pre-commit = "*"
 
