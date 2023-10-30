@@ -755,20 +755,20 @@ cli = ["click (>=5.0)"]
 
 [[package]]
 name = "python-kasa"
-version = "0.5.3"
+version = "0.5.4"
 description = "Python API for TP-Link Kasa Smarthome devices"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "python_kasa-0.5.3-py3-none-any.whl", hash = "sha256:1aba4ec9bfd0824d375a8bdf3c1569e42d32ca3aecece65f1dab394d1e3dfd1d"},
-    {file = "python_kasa-0.5.3.tar.gz", hash = "sha256:373b8ea3faae6b326224b2f6e0ad4574d782881b8d645da855c181da9306a254"},
+    {file = "python_kasa-0.5.4-py3-none-any.whl", hash = "sha256:dc68f4887ac708c8efab7cb36f870f0b80d580ec9e70d7207ba943eb638359c2"},
+    {file = "python_kasa-0.5.4.tar.gz", hash = "sha256:2ff9138de6928bd946fb636c9c7817d510fcdbbe3e0e0a75eab1db95fc4959a9"},
 ]
 
 [package.dependencies]
 anyio = "*"
 async-timeout = ">=3.0.0"
 asyncclick = ">=8"
-pydantic = ">=1,<2"
+pydantic = ">=1"
 
 [package.extras]
 docs = ["docutils (>=0.17)", "myst-parser", "sphinx (>=4,<5)", "sphinx_rtd_theme (>=0,<1)", "sphinxcontrib-programoutput (>=0,<1)"]
@@ -1079,4 +1079,4 @@ ifaddr = ">=0.1.7"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "2f4b58e6022c5852ee2ebef65795f75a1f15fb5da953c9bd8051a44d60fa6a54"
+content-hash = "497dd62db18579c7585983bd852bda473b498d6b415550b7d12466e3332886d9"
