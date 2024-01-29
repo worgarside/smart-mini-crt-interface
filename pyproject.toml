@@ -18,7 +18,7 @@ flask = "*"
 python-kasa = "==0.6.1"
 wg-utilities = {extras = ["devices-dht22"], version = "^3.11.3"}
 paho-mqtt = "*"
-pytz = "^2023.3"
+pytz = "^2023.4"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "<4.0.0"

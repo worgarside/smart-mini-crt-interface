@@ -1223,13 +1223,13 @@ speedups = ["kasa-crypt (>=0.2.0)", "orjson (>=3.9.1)"]
 
 [[package]]
 name = "pytz"
-version = "2023.3.post1"
+version = "2023.4"
 description = "World timezone definitions, modern and historical"
 optional = false
 python-versions = "*"
 files = [
-    {file = "pytz-2023.3.post1-py2.py3-none-any.whl", hash = "sha256:ce42d816b81b68506614c11e8937d3aa9e41007ceb50bfdcb0749b921bf646c7"},
-    {file = "pytz-2023.3.post1.tar.gz", hash = "sha256:7b4fddbeb94a1eba4b557da24f19fdf9db575192544270a9101d8509f9f43d7b"},
+    {file = "pytz-2023.4-py2.py3-none-any.whl", hash = "sha256:f90ef520d95e7c46951105338d918664ebfd6f1d995bd7d153127ce90efafa6a"},
+    {file = "pytz-2023.4.tar.gz", hash = "sha256:31d4583c4ed539cd037956140d695e42c033a19e984bfce9964a3f7d59bc2b40"},
 ]
 
 [[package]]
@@ -1629,4 +1629,4 @@ ifaddr = ">=0.1.7"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "13b81d4be4ba2fc8937274612066830491a8a8ea9c3dc775d00d7d2b64e01d3a"
+content-hash = "df14f15d470c980c2e7df0ca15b0be1612bcd48c6e4c3d2560a8c022857a754c"
