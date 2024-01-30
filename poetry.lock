@@ -1200,13 +1200,13 @@ cli = ["click (>=5.0)"]
 
 [[package]]
 name = "python-kasa"
-version = "0.6.1"
+version = "0.6.2"
 description = "Python API for TP-Link Kasa Smarthome devices"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "python_kasa-0.6.1-py3-none-any.whl", hash = "sha256:df11a6438ee4a0f7f896f277afc575e00ca7b283413438965c0eb9d46607e26f"},
-    {file = "python_kasa-0.6.1.tar.gz", hash = "sha256:56115677aea6bbea87c9a548d5ff725e0aea33de99e613f971193a1980485807"},
+    {file = "python_kasa-0.6.2-py3-none-any.whl", hash = "sha256:c582d9096ab131ea78effd7ea3c260552136fd81c9f6730a60f89c953b52e207"},
+    {file = "python_kasa-0.6.2.tar.gz", hash = "sha256:1fd8ce9e12e125b43b7937202c2a8667fd4bbc035570eb889a03a92820dfd02c"},
 ]
 
 [package.dependencies]
@@ -1629,4 +1629,4 @@ ifaddr = ">=0.1.7"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "13b81d4be4ba2fc8937274612066830491a8a8ea9c3dc775d00d7d2b64e01d3a"
+content-hash = "8e19416ad605ae5214b5386be851ef64042d29000de59cf22a9d787caa0d4c76"
