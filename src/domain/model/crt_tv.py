@@ -1,4 +1,5 @@
 """This module contains the class for controlling the CRT TV GUI."""
+
 from __future__ import annotations
 
 from html import unescape

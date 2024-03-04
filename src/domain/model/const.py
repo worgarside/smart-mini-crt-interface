@@ -1,4 +1,5 @@
 """All constants and functions to be used across the entire project."""
+
 from __future__ import annotations
 
 try:

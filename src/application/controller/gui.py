@@ -1,4 +1,5 @@
 """Module for holding the main controller function(s) for controlling the GUI."""
+
 from __future__ import annotations
 
 from json import dumps, loads
