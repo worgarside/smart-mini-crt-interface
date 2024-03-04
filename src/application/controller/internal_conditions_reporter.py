@@ -1,4 +1,5 @@
 """Periodically report readings from the DHT22 sensor to Home Assistant."""
+
 from __future__ import annotations
 
 from json import dumps
