@@ -1,4 +1,5 @@
 """Main controller function(s) for controlling the GUI."""
+
 from __future__ import annotations
 
 from logging import DEBUG, getLogger
