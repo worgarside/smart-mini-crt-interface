@@ -15,7 +15,7 @@ pillow = "*"
 requests = "*"
 tk = "*"
 flask = "*"
-python-kasa = "==0.6.2.1"
+python-kasa = "==0.7.0"
 wg-utilities = {extras = ["devices-dht22"], version = "^3.11.3"}
 paho-mqtt = "*"
 pytz = "^2024.1"
