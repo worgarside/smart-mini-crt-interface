@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from io import BytesIO
 from logging import DEBUG, getLogger
-from os import mkdir
-from os.path import exists, isdir, isfile, join
 from pathlib import Path
 from re import compile as compile_regex
 
@@ -26,8 +24,7 @@ class ArtworkImage:
     ALPHANUM_PATTERN = compile_regex(r"[\W_]+")
 
     def __init__(self, album: str, artist: str, url: str) -> None:
-        if not isdir(self.ARTWORK_DIR):
-            mkdir(self.ARTWORK_DIR)
+        self.ARTWORK_DIR.mkdir(exist_ok=True)
 
         self.album = album
         self.artist = artist or "unknown"
@@ -35,19 +32,20 @@ class ArtworkImage:
 
     def download(self) -> None:
         """Download the image from the URL to store it locally for future use."""
+        self.ARTWORK_DIR.joinpath(self.artist_directory).mkdir(
+            exist_ok=True,
+            parents=True,
+        )
 
-        if not isdir(self.ARTWORK_DIR / self.artist_directory):
-            mkdir(self.ARTWORK_DIR / self.artist_directory)
-
-        if isfile(self.url):
+        if Path(self.url).is_file():
             LOGGER.debug("Opening local image: %s", self.url)
-            with open(self.url, "rb") as fin:
+            with Path(self.url).open("rb") as fin:
                 artwork_bytes = fin.read()
         else:
             LOGGER.debug("Downloading artwork from remote URL: %s", self.url)
-            artwork_bytes = get(self.url).content
+            artwork_bytes = get(self.url, timeout=30).content
 
-        with open(self.file_path, "wb") as fout:
+        with self.file_path.open("wb") as fout:
             fout.write(artwork_bytes)
 
         LOGGER.info("New image saved at %s", self.file_path)
@@ -61,13 +59,12 @@ class ArtworkImage:
         Returns:
             Image: PIL Image object of artwork
         """
-
         LOGGER.debug("Getting image with size %i", size)
 
-        if not exists(self.file_path):
+        if not self.file_path.exists():
             self.download()
 
-        with open(self.file_path, "rb") as fin:
+        with self.file_path.open("rb") as fin:
             tk_img = open_image(BytesIO(fin.read()))
 
         if size is not None:
@@ -94,13 +91,13 @@ class ArtworkImage:
         return ArtworkImage.ALPHANUM_PATTERN.sub("", self.album).lower() + ".png"
 
     @property
-    def file_path(self) -> str:
+    def file_path(self) -> Path:
         """Returns the fully-qualified path to the artwork image.
 
         Returns:
             str: artwork image path
         """
-        return join(self.ARTWORK_DIR, self.artist_directory, self.filename)
+        return self.ARTWORK_DIR / self.artist_directory / self.filename
 
     def __str__(self) -> str:
         """Return the string representation of the object."""
