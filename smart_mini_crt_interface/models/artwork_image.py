@@ -3,18 +3,15 @@
 from __future__ import annotations
 
 from io import BytesIO
-from logging import DEBUG, getLogger
 from pathlib import Path
 from re import compile as compile_regex
 
 from PIL.Image import Image, Resampling
 from PIL.Image import open as open_image
 from requests import get
-from wg_utilities.loggers import add_stream_handler
+from wg_utilities.loggers import get_streaming_logger
 
-LOGGER = getLogger(__name__)
-LOGGER.setLevel(DEBUG)
-add_stream_handler(LOGGER)
+LOGGER = get_streaming_logger(__name__)
 
 
 class ArtworkImage:

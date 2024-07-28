@@ -3,39 +3,22 @@
 from __future__ import annotations
 
 from html import unescape
-from logging import DEBUG, getLogger
 from pathlib import Path
 from textwrap import dedent
 from time import sleep
 from typing import Any, ClassVar, Literal, TypedDict
 
-from application.handler.mqtt import (
-    FORCE_HA_UPDATE_TOPIC,
-    HA_CRT_PI_STATE_FROM_CRT_TOPIC,
-    MQTT_HOST,
-    MQTT_PASSWORD,
-    MQTT_USERNAME,
-)
-from dotenv import load_dotenv
-from paho.mqtt.publish import single
-from wg_utilities.exceptions import on_exception
-from wg_utilities.loggers import add_stream_handler
+from wg_utilities.loggers import get_streaming_logger
 
-from domain.model.artwork_image import ArtworkImage
-from domain.model.const import PI
+from .artwork_image import ArtworkImage
 
-load_dotenv()
-
-LOGGER = getLogger(__name__)
-LOGGER.setLevel(DEBUG)
-add_stream_handler(LOGGER)
+LOGGER = get_streaming_logger(__name__)
 
 try:
     # pylint: disable=unused-import
     from tkinter import CENTER, Canvas, Label, Tk
     from tkinter.font import Font
 
-    from PIL import Image
     from PIL.ImageTk import PhotoImage
 except ImportError as exc:
     LOGGER.warning(
@@ -57,24 +40,9 @@ except ImportError as exc:
     Canvas = MagicMock()  # type: ignore[misc]
     Tk = TkMagicMock()  # type: ignore[misc]
     Font = MagicMock()  # type: ignore[misc]
-    Image = MagicMock()
     ImageTk = MagicMock()
 
     CENTER = "center"
-
-try:
-    # pylint: disable=unused-import
-    from pigpio import OUTPUT  # type: ignore[import-not-found]
-    from pigpio import pi as rasp_pi
-except ImportError as exc:
-    LOGGER.warning(
-        "Unable to import GPIO dependencies, using mocks instead: %s",
-        repr(exc),
-    )
-    from unittest.mock import MagicMock
-
-    rasp_pi = MagicMock()
-    OUTPUT = None
 
 _DEFAULT = object()
 
@@ -129,13 +97,10 @@ class CrtTv:
         str(Path(__file__).parent.parent / "assets" / "null.png"),
     )
 
-    @on_exception()
-    def __init__(self, gpio_pin: int, *, force_ha_update: bool = True) -> None:
+    def __init__(self) -> None:
         self._root = Tk()
         self._root.attributes("-fullscreen", True)  # noqa: FBT003
         self._root.configure(bg=self.BG_COLOR)
-
-        self.gpio_pin = gpio_pin
 
         crt_font = Font(family="Courier New", size=int(0.05 * self.screen_height))
 
@@ -199,18 +164,6 @@ class CrtTv:
                 **self.coords[widget_name],  # type: ignore[literal-required]
             )
 
-        if force_ha_update:
-            single(
-                FORCE_HA_UPDATE_TOPIC,
-                payload=True,
-                hostname=MQTT_HOST,
-                auth={
-                    "username": MQTT_USERNAME,
-                    "password": MQTT_PASSWORD,
-                },
-            )
-
-    @on_exception()
     def hscroll_label(self, k: Literal["media_artist", "media_title"]) -> None:
         """Horizontally scroll a label on the GUI.
 
@@ -236,10 +189,7 @@ class CrtTv:
             self.coords[k]["x"] = 0.5 * self.screen_width
             self.widgets[k].place(**self.coords[k])
 
-    @on_exception()
-    def refresh_display_output(
-        self,
-    ) -> None:
+    def refresh_display_output(self) -> None:
         """Refresh the display to display current property values."""
         LOGGER.debug(
             "Updating display with title `%s`, artist `%s`, artwork `%s`",
@@ -254,7 +204,7 @@ class CrtTv:
         self.widgets["artwork"].configure(image=self._artwork_photoimage)
 
         k: Literal["media_title", "media_artist"]
-        for k, v in (  # type: ignore[assignment]
+        for k, v in (
             ("media_title", self.title),
             ("media_artist", self.artist),
         ):
@@ -269,68 +219,6 @@ class CrtTv:
         """Start the Tk mainloop, this blocks until the GUI is closed."""
         # TODO: make this optionally async so other things can run in the background?
         self._root.mainloop()
-
-    def switch_on(self, *, notify_ha: bool = False) -> None:
-        """Switch on the CRT TV.
-
-        Args:
-            notify_ha (bool): Whether to notify Home Assistant of the state change.
-                Defaults to False.
-        """
-        LOGGER.debug("Switching on CRT TV")
-        PI.write(self.gpio_pin, level=True)
-        if notify_ha:
-            single(
-                HA_CRT_PI_STATE_FROM_CRT_TOPIC,
-                payload=True,
-                hostname=MQTT_HOST,
-                auth={
-                    "username": MQTT_USERNAME,
-                    "password": MQTT_PASSWORD,
-                },
-            )
-
-    def switch_off(self, *, notify_ha: bool = False) -> None:
-        """Switch off the CRT TV.
-
-        Args:
-            notify_ha (bool): Whether to notify Home Assistant of the state change.
-        """
-        LOGGER.debug("Switching off CRT TV")
-        PI.write(self.gpio_pin, level=False)
-        if notify_ha:
-            single(
-                HA_CRT_PI_STATE_FROM_CRT_TOPIC,
-                payload=False,
-                hostname=MQTT_HOST,
-                auth={
-                    "username": MQTT_USERNAME,
-                    "password": MQTT_PASSWORD,
-                },
-            )
-
-    def toggle_state(self, *, notify_ha: bool = False) -> None:
-        """Toggle the power state of the CRT TV.
-
-        Args:
-            notify_ha (bool): Whether to notify Home Assistant of the state change.
-        """
-        new_state = not self.power_state
-
-        LOGGER.debug("Toggling CRT TV power state to %s", new_state)
-
-        PI.write(self.gpio_pin, new_state)
-
-        if notify_ha:
-            single(
-                HA_CRT_PI_STATE_FROM_CRT_TOPIC,
-                payload=new_state,
-                hostname=MQTT_HOST,
-                auth={
-                    "username": MQTT_USERNAME,
-                    "password": MQTT_PASSWORD,
-                },
-            )
 
     def update_display_values(
         self,
@@ -410,7 +298,7 @@ class CrtTv:
 
     @property
     def current_state_log_output(self) -> str:
-        """Generate a useful output for lgos.
+        """Generate a useful output for logs.
 
         Returns:
             str: a useful output of the current state of the CRT for logging
@@ -421,8 +309,6 @@ class CrtTv:
         Artist:  {self.artist}
         Album:   {self.album}
         Artwork: {self.artwork_image!r}
-
-        State:   {self.power_state}
         """,
         ).strip()
 
@@ -457,12 +343,3 @@ class CrtTv:
         """Set the title value."""
         self._title = value or ""
         self.refresh_display_output()
-
-    @property
-    def power_state(self) -> bool:
-        """Get the power state of the CRT.
-
-        Returns:
-            bool: the power state of the CRT (GPIO pin)
-        """
-        return bool(PI.read(self.gpio_pin))

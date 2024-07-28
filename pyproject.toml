@@ -8,37 +8,19 @@ readme = "README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.11"
 pigpio = "*"
 pillow = "*"
 tk = "*"
-wg-utilities = { extras = ["devices-dht22"], version = "^3.11.3" }
-paho-mqtt = "*"
+wg-utilities = { extras = ["devices-dht22", "mqtt"], version = "^5.16.0" }
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core"]
 
-[tool.black]
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-  | Pipfile\.lock
-)/
-'''
-
 [tool.mypy]
 exclude = ["_local_sandbox"]
-mypy_path = "src"
+mypy_path = "smart_mini_crt_interface"
 
 follow_imports = "normal"
 disallow_any_generics = true
@@ -113,7 +95,6 @@ convention = "google"
 
 [tool.ruff.lint.pylint]
 max-args = 10
-allow-dunder-method-names = ["__json__"]
 
 [tool.ruff.lint.isort]
 required-imports = ["from __future__ import annotations"]
@@ -128,16 +109,11 @@ docstring-code-line-length = "dynamic"
 
 [tool.vulture]
 min_confidence = 70
-paths = ["src"]
+paths = ["smart_mini_crt_interface"]
 sort_by_size = true
 
 [tool.creosote]
-paths = ["src"]
+paths = ["smart_mini_crt_interface"]
 deps-file = "pyproject.toml"
 sections = ["tool.poetry.dependencies"]
-exclude-deps = [
-  "paho-mqtt",
-  "pigpio",
-  "pillow",
-  "tk",
-]
+exclude-deps = ["paho-mqtt", "pigpio", "pillow", "tk"]
