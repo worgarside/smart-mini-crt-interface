@@ -22,12 +22,10 @@ repos:
           - --strict
           - --show-error-codes
         additional_dependencies:
-          - types-requests
+          - httpx==0.27.0
           - types-Pillow
-          - types-tzlocal
           - wg-utilities==5.16.0
-          - types-paho-mqtt
-          - python-dotenv==1.0.1
+          - paho-mqtt==2.1.0
 
   - repo: https://github.com/python-poetry/poetry
     rev: 1.8.0

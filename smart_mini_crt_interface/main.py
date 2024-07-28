@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
 from json import dumps, loads
 from typing import TYPE_CHECKING, Any
 
@@ -60,12 +61,16 @@ def main() -> None:
     """Main function for this script."""
     LOGGER.info("Starting CRT Interface (%ix%i)", CRT.screen_width, CRT.screen_height)
 
+    mqtt.CLIENT.connect(mqtt.MQTT_HOST)
+
     mqtt.CLIENT.subscribe("/crtpi/crt-interface/content", qos=1)
     mqtt.CLIENT.loop_start()
 
-    LOGGER.debug("MQTT client connected, starting CRT mainloop")
-    CRT.start_gui()
-    mqtt.CLIENT.loop_stop(force=True)
+    with suppress(KeyboardInterrupt):
+        LOGGER.debug("MQTT client connected, starting CRT mainloop")
+        CRT.start_gui()
+
+    mqtt.CLIENT.loop_stop()
 
 
 if __name__ == "__main__":

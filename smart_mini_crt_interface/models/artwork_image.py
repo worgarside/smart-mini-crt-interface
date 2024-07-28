@@ -6,9 +6,9 @@ from io import BytesIO
 from pathlib import Path
 from re import compile as compile_regex
 
+from httpx import get
 from PIL.Image import Image, Resampling
 from PIL.Image import open as open_image
-from requests import get
 from wg_utilities.loggers import get_streaming_logger
 
 LOGGER = get_streaming_logger(__name__)

@@ -12,7 +12,8 @@ python = "^3.11"
 pigpio = "*"
 pillow = "*"
 tk = "*"
-wg-utilities = { extras = ["devices-dht22", "mqtt"], version = "^5.16.0" }
+wg-utilities = { extras = ["devices-dht22", "loggers", "mqtt"], version = "^5.16.0" }
+httpx = "^0.27.0"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
