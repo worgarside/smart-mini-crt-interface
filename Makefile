@@ -33,7 +33,7 @@ restart:
 	sudo systemctl restart smart_mini_crt_interface.service
 
 run:
-	sudo .venv/bin/python smart_mini_crt_interface/main.py
+	.venv/bin/python smart_mini_crt_interface/main.py
 
 start:
 	sudo systemctl start smart_mini_crt_interface.service
