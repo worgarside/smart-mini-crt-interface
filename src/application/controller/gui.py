@@ -6,24 +6,27 @@ from json import dumps, loads
 from logging import DEBUG, getLogger
 from pathlib import Path
 from sys import path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from dotenv import load_dotenv
-from paho.mqtt.client import MQTTMessage
 from wg_utilities.exceptions import on_exception
 from wg_utilities.loggers import add_stream_handler
 
 path.append(str(Path(__file__).parents[2]))
 
 # pylint: disable=wrong-import-position
-from application.handler.mqtt import (  # noqa: E402
+from domain.model.artwork_image import ArtworkImage
+from domain.model.const import CRT_PIN
+from domain.model.crt_tv import CrtTv
+
+from application.handler.mqtt import (
     CRT_DISPLAY_MQTT_TOPIC,
     HA_CRT_PI_STATE_FROM_HA_TOPIC,
     MQTT_CLIENT,
 )
-from domain.model.artwork_image import ArtworkImage  # noqa: E402
-from domain.model.const import CRT_PIN  # noqa: E402
-from domain.model.crt_tv import CrtTv  # noqa: E402
+
+if TYPE_CHECKING:
+    from paho.mqtt.client import MQTTMessage
 
 load_dotenv()
 
@@ -44,7 +47,6 @@ def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
     Raises:
         ValueError: if the state-from-ha topic receives an invalid payload
     """
-
     if message.topic == HA_CRT_PI_STATE_FROM_HA_TOPIC:
         if message.payload.decode() == "on":
             CRT.switch_on()
@@ -60,13 +62,13 @@ def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
 
         LOGGER.debug("Received payload: %s", dumps(payload))
 
-        if payload["state"] == "off" or payload["album_artwork_url"] in (
+        if payload["state"] == "off" or payload["album_artwork_url"] in {
             None,
             "",
             "None",
             "none",
             "null",
-        ):
+        }:
             CRT.switch_off(notify_ha=True)
             CRT.update_display_values(
                 title=payload.get("title"),
@@ -93,7 +95,6 @@ def on_message(_: Any, __: Any, message: MQTTMessage) -> None:
 @on_exception()
 def main() -> None:
     """Main function for this script."""
-
     LOGGER.info("Starting CRT Interface (%ix%i)", CRT.screen_width, CRT.screen_height)
 
     MQTT_CLIENT.on_message = on_message
