@@ -8,6 +8,7 @@ User=pi
 Group=pi
 Environment="DISPLAY=:0.0"
 Environment="XAUTHORITY=/home/pi/.Xauthority"
+EnvironmentFile=/home/pi/smart-mini-crt-interface/.env
 ExecStart=/home/pi/smart-mini-crt-interface/.venv/bin/python /home/pi/smart-mini-crt-interface/smart_mini_crt_interface/main.py
 Restart=on-failure
 RestartSec=10s
