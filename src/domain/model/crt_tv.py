@@ -7,12 +7,7 @@ from logging import DEBUG, getLogger
 from pathlib import Path
 from textwrap import dedent
 from time import sleep
-from typing import Any, Literal, TypedDict
-
-from dotenv import load_dotenv
-from paho.mqtt.publish import single
-from wg_utilities.exceptions import on_exception
-from wg_utilities.loggers import add_stream_handler
+from typing import Any, ClassVar, Literal, TypedDict
 
 from application.handler.mqtt import (
     FORCE_HA_UPDATE_TOPIC,
@@ -21,6 +16,11 @@ from application.handler.mqtt import (
     MQTT_PASSWORD,
     MQTT_USERNAME,
 )
+from dotenv import load_dotenv
+from paho.mqtt.publish import single
+from wg_utilities.exceptions import on_exception
+from wg_utilities.loggers import add_stream_handler
+
 from domain.model.artwork_image import ArtworkImage
 from domain.model.const import PI
 
@@ -39,7 +39,8 @@ try:
     from PIL.ImageTk import PhotoImage
 except ImportError as exc:
     LOGGER.warning(
-        "Unable to import TK/PIL dependencies, using mocks instead: %s", repr(exc)
+        "Unable to import TK/PIL dependencies, using mocks instead: %s",
+        repr(exc),
     )
     from unittest.mock import MagicMock
 
@@ -50,7 +51,6 @@ except ImportError as exc:
         def mainloop(*_: Any, **__: Any) -> None:
             """Substitute for TK.mainloop for non-Tk configurations."""
             while True:
-                print("loop")
                 sleep(1)
 
     Label = MagicMock()  # type: ignore[misc]
@@ -68,7 +68,8 @@ try:
     from pigpio import pi as rasp_pi
 except ImportError as exc:
     LOGGER.warning(
-        "Unable to import GPIO dependencies, using mocks instead: %s", repr(exc)
+        "Unable to import GPIO dependencies, using mocks instead: %s",
+        repr(exc),
     )
     from unittest.mock import MagicMock
 
@@ -115,17 +116,23 @@ class CrtTv:
     """CRT TV class for controlling the GUI (not the power state)."""
 
     BG_COLOR = "#000000"
-    STANDARD_ARGS: StandardArgsInfo = {"highlightthickness": 0, "bd": 0, "bg": BG_COLOR}
+    STANDARD_ARGS: ClassVar[StandardArgsInfo] = {
+        "highlightthickness": 0,
+        "bd": 0,
+        "bg": BG_COLOR,
+    }
     CHAR_LIM = 31
 
     NULL_IMAGE = ArtworkImage(
-        "null", "null", str(Path(__file__).parent.parent / "assets" / "null.png")
+        "null",
+        "null",
+        str(Path(__file__).parent.parent / "assets" / "null.png"),
     )
 
     @on_exception()
-    def __init__(self, gpio_pin: int, force_ha_update: bool = True) -> None:
+    def __init__(self, gpio_pin: int, *, force_ha_update: bool = True) -> None:
         self._root = Tk()
-        self._root.attributes("-fullscreen", True)
+        self._root.attributes("-fullscreen", True)  # noqa: FBT003
         self._root.configure(bg=self.BG_COLOR)
 
         self.gpio_pin = gpio_pin
@@ -139,9 +146,7 @@ class CrtTv:
             **self.STANDARD_ARGS,
         )
 
-        canvas_widget.place(
-            x=0, y=0, width=self.screen_width, height=self.screen_height
-        )
+        canvas_widget.place(x=0, y=0, width=self.screen_width, height=self.screen_height)
 
         self.widgets: WidgetsInfo = {
             "canvas": canvas_widget,
@@ -191,7 +196,7 @@ class CrtTv:
 
         for widget_name in ("artwork", "media_title", "media_artist"):
             self.widgets[widget_name].place(  # type: ignore[literal-required]
-                **self.coords[widget_name]  # type: ignore[literal-required]
+                **self.coords[widget_name],  # type: ignore[literal-required]
             )
 
         if force_ha_update:
@@ -214,7 +219,6 @@ class CrtTv:
         Args:
             k (str): the key to use in finding the label to scroll
         """
-
         self.coords[k]["x"] -= 2
 
         self.coords[k]["x"] = (
@@ -237,7 +241,6 @@ class CrtTv:
         self,
     ) -> None:
         """Refresh the display to display current property values."""
-
         LOGGER.debug(
             "Updating display with title `%s`, artist `%s`, artwork `%s`",
             self.title,
@@ -246,7 +249,7 @@ class CrtTv:
         )
 
         self._artwork_photoimage = PhotoImage(
-            self.artwork_image.get_image(self.artwork_size)
+            self.artwork_image.get_image(self.artwork_size),
         )
         self.widgets["artwork"].configure(image=self._artwork_photoimage)
 
@@ -264,7 +267,7 @@ class CrtTv:
 
     def start_gui(self) -> None:
         """Start the Tk mainloop, this blocks until the GUI is closed."""
-        # TODO make this optionally async so other things can run in the background?
+        # TODO: make this optionally async so other things can run in the background?
         self._root.mainloop()
 
     def switch_on(self, *, notify_ha: bool = False) -> None:
@@ -275,7 +278,7 @@ class CrtTv:
                 Defaults to False.
         """
         LOGGER.debug("Switching on CRT TV")
-        PI.write(self.gpio_pin, True)
+        PI.write(self.gpio_pin, level=True)
         if notify_ha:
             single(
                 HA_CRT_PI_STATE_FROM_CRT_TOPIC,
@@ -294,7 +297,7 @@ class CrtTv:
             notify_ha (bool): Whether to notify Home Assistant of the state change.
         """
         LOGGER.debug("Switching off CRT TV")
-        PI.write(self.gpio_pin, False)
+        PI.write(self.gpio_pin, level=False)
         if notify_ha:
             single(
                 HA_CRT_PI_STATE_FROM_CRT_TOPIC,
@@ -346,7 +349,6 @@ class CrtTv:
             artist (str): the artist(s) name)
             artwork_image (ArtworkImage): the artwork image instance
         """
-
         if title is not _DEFAULT:
             self._title = title or ""
 
@@ -413,7 +415,6 @@ class CrtTv:
         Returns:
             str: a useful output of the current state of the CRT for logging
         """
-
         return dedent(
             f"""
         Title:   {self.title}
@@ -422,7 +423,7 @@ class CrtTv:
         Artwork: {self.artwork_image!r}
 
         State:   {self.power_state}
-        """
+        """,
         ).strip()
 
     @property
