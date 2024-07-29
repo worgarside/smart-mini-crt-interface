@@ -100,7 +100,7 @@ class CrtTv:
     def __init__(self) -> None:
         self._root = Tk()
         self._root.attributes("-fullscreen", True)  # noqa: FBT003
-        self._root.configure(bg=self.BG_COLOR)
+        self._root.configure(bg=self.BG_COLOR, cursor="none")
 
         crt_font = Font(family="Courier New", size=int(0.05 * self.screen_height))
 
