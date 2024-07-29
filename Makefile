@@ -38,6 +38,9 @@ run:
 start:
 	sudo systemctl start smart_mini_crt_interface.service
 
+status:
+	sudo systemctl status smart_mini_crt_interface.service
+
 stop:
 	sudo systemctl stop smart_mini_crt_interface.service
 
