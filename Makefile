@@ -33,10 +33,13 @@ restart:
 	sudo systemctl restart smart_mini_crt_interface.service
 
 run:
-	sudo .venv/bin/python smart_mini_crt_interface/application/controller/smart_mini_crt_interface.py
+	.venv/bin/python smart_mini_crt_interface/main.py
 
 start:
 	sudo systemctl start smart_mini_crt_interface.service
+
+status:
+	sudo systemctl status smart_mini_crt_interface.service
 
 stop:
 	sudo systemctl stop smart_mini_crt_interface.service
@@ -44,15 +47,11 @@ stop:
 tail:
 	clear && sudo journalctl -u smart_mini_crt_interface.service -f -n 50
 
-test:
-	poetry run pytest
-
 update:
 	git add .
 	git stash save "Stash before update @ $(shell date)"
 	git pull --prune
 	@$(MAKE) install-all
 
-
 vscode-shortcut-1:
-	poetry run python smart_mini_crt_interface/rain.py
+	poetry run python smart_mini_crt_interface/main.py
