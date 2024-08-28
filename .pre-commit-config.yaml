@@ -22,7 +22,7 @@ repos:
           - --strict
           - --show-error-codes
         additional_dependencies:
-          - httpx==0.27.0
+          - httpx==0.27.2
           - types-Pillow
           - wg-utilities[mqtt]==5.16.1
 
